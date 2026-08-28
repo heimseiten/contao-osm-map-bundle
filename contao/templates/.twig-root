@@ -1,0 +1,7 @@
+Diese Datei markiert den Anfang der Template-Namen dieses Bundles.
+
+Ohne sie nimmt Contao den nächsttieferen Ordner als Wurzel — das Template hieße dann
+"osm_map" statt "content_element/osm_map", und das Inhaltselement fände es nicht
+(Fehlermeldung: „Could neither find template content_element/osm_map …").
+
+Siehe Contao\CoreBundle\Twig\Loader\TemplateLocator::isNamespaceRoot().

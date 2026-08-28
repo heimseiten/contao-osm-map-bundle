@@ -1,0 +1,4 @@
+# Was nur der Entwicklung dient, lädt Composer nicht mit herunter.
+/.gitattributes export-ignore
+/.gitignore     export-ignore
+/doc            export-ignore

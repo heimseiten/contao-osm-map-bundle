@@ -1,0 +1,47 @@
+{% extends "@Contao/content_element/_base.html.twig" %}
+{% use "@Contao/component/_figure.html.twig" %}
+
+{#
+    Karte aus OpenStreetMap.
+
+    Das Bild liegt fertig auf dem eigenen Server — beim Aufruf der Seite wird nichts
+    nachgeladen. Der Balken am unteren Bildrand ist HTML und kein Teil des Bildes: nur so
+    lassen sich einzelne Wörter verlinken, und der Text bleibt lesbar und übersetzbar.
+#}
+
+{# Die Gestaltung kommt aus dem Bundle und wird nur geladen, wenn eine Karte auf der
+   Seite steht. Eigene Anpassungen gehören ins Theme — die Regeln dort gewinnen, weil sie
+   später geladen werden. #}
+{% block style %}
+    {% add "osm_map_css" to stylesheets %}
+        <link rel="stylesheet" href="{{ asset("osm-map.css", "heimseiten_contao_osm_map") }}">
+    {% endadd %}
+{% endblock %}
+
+{% block content %}
+    {% if hinweis %}
+        <p class="osm-map__hinweis">{{ hinweis }}</p>
+    {% elseif bild %}
+        <div class="osm-map">
+            {% if verlinken %}
+                <a href="{{ link }}" class="osm-map__flaeche" title="{{ link_titel }}" target="_blank" rel="noopener">
+                    {% with {figure: bild} %}{{ block('figure_component') }}{% endwith %}
+                </a>
+            {% else %}
+                {% with {figure: bild} %}{{ block('figure_component') }}{% endwith %}
+            {% endif %}
+
+            {% if balken %}
+                <p class="osm-map__balken">
+                    {%- for teil in balken -%}
+                        {%- if teil.typ == 'link' -%}
+                            <a href="{{ teil.ziel }}" target="_blank" rel="noopener" data-dienst="{{ teil.dienst }}">{{ teil.text }}</a>
+                        {%- else -%}
+                            {{ teil.text }}
+                        {%- endif -%}
+                    {%- endfor -%}
+                </p>
+            {% endif %}
+        </div>
+    {% endif %}
+{% endblock %}

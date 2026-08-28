@@ -1,0 +1,79 @@
+/*
+ * Karte aus OpenStreetMap — Grundgestaltung.
+ *
+ * Bewusst knapp gehalten: Das Bild füllt die verfügbare Breite, der Balken sitzt darüber
+ * am unteren Rand. Farben und Schriftgrößen erbt der Balken vom Theme, damit er sich in
+ * jede Website einfügt; überschreiben lässt sich alles über die Klassen .osm-map*.
+ */
+
+.osm-map {
+    position: relative;
+    line-height: 0; /* verhindert die Lücke unter dem Bild durch die Zeilenhöhe */
+}
+
+.osm-map figure,
+.osm-map__flaeche {
+    display: block;
+    margin: 0;
+}
+
+.osm-map img {
+    display: block;
+    width: 100%;
+    height: auto;
+}
+
+/* Karten vergrößern sich nicht beim Überfahren mit der Maus.
+   Viele Themes lassen verlinkte Bilder aufzoomen (`a img:hover { transform: scale(…) }`)
+   — bei einer Karte ist das falsch: Der Ausschnitt verschiebt sich und der Maßstab
+   stimmt nicht mehr. Weil solche Theme-Regeln oft mit hoher Spezifität geschrieben sind
+   (etwa `body #container figure a img`), ist !important hier der verlässliche Weg. */
+.osm-map a img,
+.osm-map a:hover img,
+.osm-map a img:hover {
+	transform: none !important;
+}
+
+/* Der Balken liegt über dem unteren Bildrand, halbdurchsichtig hinterlegt. */
+.osm-map__balken {
+    position: absolute;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    margin: 0;
+    padding: 0.5em 0.9em;
+    background: rgba(255, 255, 255, 0.82);
+    color: #333;
+    font-size: 0.85rem;
+    line-height: 1.5;
+    text-align: center;
+
+    /* Klicks gehen durch den Balken hindurch auf das verlinkte Bild — nur die Wörter
+       im Balken fangen sie ab (siehe nächste Regel). */
+    pointer-events: none;
+}
+
+.osm-map__balken a {
+    pointer-events: auto;
+    color: inherit;
+    text-decoration: underline;
+}
+
+.osm-map__balken a:hover,
+.osm-map__balken a:focus-visible {
+    text-decoration: none;
+}
+
+/* Hinweis, solange noch kein Bild erzeugt wurde (nur im Vorschaumodus sichtbar). */
+.osm-map__hinweis {
+    padding: 1em;
+    border: 1px dashed #bbb;
+    color: #666;
+}
+
+@media (max-width: 30rem) {
+    .osm-map__balken {
+        padding: 0.4em 0.6em;
+        font-size: 0.75rem;
+    }
+}

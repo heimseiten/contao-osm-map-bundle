@@ -1,0 +1,32 @@
+services:
+    _defaults:
+        autowire: true
+        autoconfigure: true
+
+    Heimseiten\ContaoOsmMapBundle\:
+        resource: '../src/'
+        exclude: '../src/{HeimseitenContaoOsmMapBundle.php,ContaoManager}'
+
+    # Kennung, mit der sich die Website bei OpenStreetMap meldet. Die Nutzungsbedingungen
+    # verlangen eine aussagekräftige Angabe mit Kontaktmöglichkeit — genommen wird die
+    # Adresse der eigenen Website.
+    Heimseiten\ContaoOsmMapBundle\Service\Geocoder:
+        arguments:
+            $projectDir: '%kernel.project_dir%'
+            $userAgent: '%heimseiten_osm_map.user_agent%'
+
+    Heimseiten\ContaoOsmMapBundle\Service\MapImageRenderer:
+        arguments:
+            $userAgent: '%heimseiten_osm_map.user_agent%'
+
+    Heimseiten\ContaoOsmMapBundle\Service\MapBuilder:
+        arguments:
+            $projectDir: '%kernel.project_dir%'
+            $zielordner: '%heimseiten_osm_map.ordner%'
+
+parameters:
+    # In welchem Ordner die erzeugten Kartenbilder liegen. Er wird bei Bedarf angelegt.
+    heimseiten_osm_map.ordner: 'files/karten'
+
+    # Wird bei jeder Anfrage an OpenStreetMap mitgeschickt.
+    heimseiten_osm_map.user_agent: 'Contao OSM Map Bundle (heimseiten.de; +https://www.heimseiten.de/)'
