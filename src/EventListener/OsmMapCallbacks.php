@@ -56,9 +56,13 @@ class OsmMapCallbacks
                     'markerFarbe' => (string) $datensatz->osmMarkerColor,
                     'positionen' => (string) $datensatz->osmPositionen,
                     'gespeicherterZoom' => (int) $datensatz->osmZoomEffektiv,
+                    // Ohne den Haken bleiben beide Maße 0 — dann entsteht keine zweite Fassung.
+                    'breiteMobil' => $datensatz->osmMobil ? (int) $datensatz->osmWidthMobil : 0,
+                    'hoeheMobil' => $datensatz->osmMobil ? (int) $datensatz->osmHeightMobil : 0,
                 ],
                 (string) $datensatz->osmHash ?: null,
                 $datensatz->osmImage ?: null,
+                $datensatz->osmImageMobil ?: null,
             );
         } catch (OsmMapException $e) {
             Message::addError($e->getMessage());
@@ -68,6 +72,7 @@ class OsmMapCallbacks
 
         $this->connection->update('tl_content', [
             'osmImage' => $ergebnis['uuid'],
+            'osmImageMobil' => $ergebnis['uuidMobil'],
             'osmPositionen' => json_encode($ergebnis['positionen'], JSON_UNESCAPED_UNICODE),
             'osmHash' => $ergebnis['fingerabdruck'],
             'osmZoomEffektiv' => $ergebnis['zoom'],

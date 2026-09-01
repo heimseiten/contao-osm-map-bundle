@@ -2,6 +2,57 @@
 {% use "@Contao/component/_figure.html.twig" %}
 
 {#
+    Zweite Fassung für schmale Bildschirme.
+
+    Ein breites, flaches Kartenbild wird auf dem Telefon entweder sehr klein oder es zeigt
+    nach dem Zuschneiden die Umgebung statt des Ortes. Deshalb entsteht beim Speichern auf
+    Wunsch ein zweites Bild in eigenem Format (meist quadratisch), und der Browser sucht
+    sich die passende Fassung selbst aus.
+
+    Umgesetzt als zusätzliche Quellen IM selben <picture>, nicht als zweites Bild mit
+    „display:none": Ein ausgeblendetes zweites <img> würde trotzdem geladen — beide Bilder
+    also übertragen, obwohl nur eines zu sehen ist. Die schmalen Quellen stehen VOR den
+    übrigen, denn der Browser nimmt die erste, deren Bedingung zutrifft.
+#}
+{% block picture_component %}
+    {% if bild_schmal|default(false) %}
+        {% set schmal_media = '(max-width: ' ~ schmal_bis ~ 'px)' %}
+        <picture>
+            {# Erst die modernen Formate (AVIF, WebP) der schmalen Fassung … #}
+            {% for quelle in bild_schmal.image.sources %}
+                {% set schmal_attribute = attrs()
+                    .set('srcset', quelle.srcset)
+                    .setIfExists('sizes', quelle.sizes|default)
+                    .setIfExists('type', quelle.type|default)
+                    .set('media', quelle.media|default ? schmal_media ~ ' and ' ~ quelle.media : schmal_media)
+                    .setIfExists('width', quelle.width|default)
+                    .setIfExists('height', quelle.height|default)
+                %}
+                <source{{ schmal_attribute }}>
+            {% endfor %}
+
+            {# … dann dieselbe Fassung im Grundformat, als Rückfallebene. #}
+            {% set schmal_bild = bild_schmal.image.img %}
+            {% set schmal_attribute = attrs()
+                .set('srcset', schmal_bild.srcset is defined and schmal_bild.srcset ? schmal_bild.srcset : schmal_bild.src)
+                .setIfExists('sizes', schmal_bild.sizes|default)
+                .set('media', schmal_media)
+                .setIfExists('width', schmal_bild.width|default)
+                .setIfExists('height', schmal_bild.height|default)
+            %}
+            <source{{ schmal_attribute }}>
+
+            {# Darunter die gewohnten Quellen des breiten Bildes und das <img> selbst. #}
+            {% if figure.image.sources %}{{ block('sources') }}{% endif %}
+            {{ block('image') }}
+        </picture>
+        {{ block('schema_org') }}
+    {% else %}
+        {{ parent() }}
+    {% endif %}
+{% endblock %}
+
+{#
     Karte aus OpenStreetMap.
 
     Das Bild liegt fertig auf dem eigenen Server — beim Aufruf der Seite wird nichts

@@ -24,7 +24,7 @@ use Heimseiten\ContaoOsmMapBundle\Service\MapLinks;
  */
 $GLOBALS['TL_DCA']['tl_content']['palettes']['osm_map'] =
     '{type_legend},type,headline;'
-    .'{osm_legend},osmPoints,osmZoom,osmWidth,osmHeight,osmMarkerColor;'
+    .'{osm_legend},osmPoints,osmZoom,osmWidth,osmHeight,osmMobil,osmMarkerColor;'
     .'{osm_link_legend},osmLinkTyp,osmOverlayText;'
     .'{image_legend},size,overwriteMeta;'
     .'{template_legend:hide},customTpl;'
@@ -33,6 +33,10 @@ $GLOBALS['TL_DCA']['tl_content']['palettes']['osm_map'] =
     .'{invisible_legend:hide},invisible,start,stop';
 
 $GLOBALS['TL_DCA']['tl_content']['subpalettes']['overwriteMeta'] = 'alt,imageTitle,imageUrl,caption';
+// Ohne diesen Eintrag bleibt die Unterpalette unsichtbar: Contao wertet sie nur für
+// Felder aus, die als Selektor angemeldet sind — der Haken allein genügt nicht.
+$GLOBALS['TL_DCA']['tl_content']['palettes']['__selector__'][] = 'osmMobil';
+$GLOBALS['TL_DCA']['tl_content']['subpalettes']['osmMobil'] = 'osmWidthMobil,osmHeightMobil,osmMobilBis,osmSizeMobil';
 
 $felder = [
     /*
@@ -99,6 +103,54 @@ $felder = [
         'eval' => ['rgxp' => 'natural', 'maxlength' => 4, 'tl_class' => 'w50'],
         'sql' => 'smallint(5) unsigned NOT NULL default 600',
     ],
+    /*
+     * Zweite Fassung des Kartenbildes für schmale Bildschirme.
+     *
+     * Ein breites, flaches Kartenbild wird auf dem Telefon entweder sehr klein oder es
+     * zeigt nach dem Zuschneiden die Umgebung statt des Ortes. Mit dieser Einstellung
+     * entsteht beim Speichern ein zweites Bild in eigenem Format — meist quadratisch —,
+     * das der Browser unterhalb der eingestellten Breite von sich aus wählt.
+     */
+    'osmMobil' => [
+        'inputType' => 'checkbox',
+        'exclude' => true,
+        'eval' => ['submitOnChange' => true, 'tl_class' => 'w50 m12'],
+        'sql' => "char(1) NOT NULL default ''",
+    ],
+    'osmWidthMobil' => [
+        'inputType' => 'text',
+        'exclude' => true,
+        'default' => 800,
+        'eval' => ['rgxp' => 'natural', 'maxlength' => 4, 'tl_class' => 'w50 clr'],
+        'sql' => 'smallint(5) unsigned NOT NULL default 800',
+    ],
+    'osmHeightMobil' => [
+        'inputType' => 'text',
+        'exclude' => true,
+        'default' => 800,
+        'eval' => ['rgxp' => 'natural', 'maxlength' => 4, 'tl_class' => 'w50'],
+        'sql' => 'smallint(5) unsigned NOT NULL default 800',
+    ],
+    'osmMobilBis' => [
+        'inputType' => 'text',
+        'exclude' => true,
+        'default' => 767,
+        'eval' => ['rgxp' => 'natural', 'maxlength' => 4, 'tl_class' => 'w50 clr'],
+        'sql' => 'smallint(5) unsigned NOT NULL default 767',
+    ],
+    /*
+     * Eigene Bildgröße für die schmale Fassung: Das quadratische Bild hat ein anderes
+     * Seitenverhältnis, eine auf das breite Bild zugeschnittene Größe würde es beschneiden.
+     * Ohne Angabe liefert Contao die Datei unverkleinert aus — und die entsteht in
+     * doppelter Auflösung.
+     */
+    'osmSizeMobil' => [
+        'inputType' => 'imageSize',
+        'exclude' => true,
+        'reference' => &$GLOBALS['TL_LANG']['MSC'],
+        'eval' => ['rgxp' => 'natural', 'includeBlankOption' => true, 'nospace' => true, 'helpwizard' => true, 'tl_class' => 'w50'],
+        'sql' => "varchar(64) NOT NULL default ''",
+    ],
     'osmLinkTyp' => [
         'inputType' => 'select',
         'exclude' => true,
@@ -118,6 +170,10 @@ $felder = [
 
     // --- vom System gefüllt, nicht in der Palette ---
     'osmImage' => [
+        'sql' => 'binary(16) NULL',
+    ],
+    // Die zweite Fassung für schmale Bildschirme; leer, wenn keine gewünscht ist.
+    'osmImageMobil' => [
         'sql' => 'binary(16) NULL',
     ],
     /*

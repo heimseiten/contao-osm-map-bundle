@@ -44,6 +44,7 @@ class OsmMapController extends AbstractContentElementController
         if (!$model->osmImage) {
             // Noch kein Bild: im Frontend nichts ausgeben, im Vorschaumodus einen Hinweis.
             $template->set('bild', null);
+            $template->set('bild_schmal', null);
             $template->set('hinweis', 'Für dieses Karten-Element wurde noch kein Bild erzeugt. Bitte das Element im Backend einmal speichern.');
 
             return $template->getResponse();
@@ -61,6 +62,24 @@ class OsmMapController extends AbstractContentElementController
             ->setLinkHref('')
             ->buildIfResourceExists()
         ;
+
+        // Zweite Fassung für schmale Bildschirme, sofern eingerichtet. Sie zeigt denselben
+        // Ort in anderem Format — meist quadratisch — und bekommt eine eigene Bildgröße,
+        // weil eine auf das breite Bild zugeschnittene Größe das Quadrat beschneiden würde.
+        $bildSchmal = null;
+
+        if ($model->osmMobil && $model->osmImageMobil) {
+            $bildSchmal = $this->studio
+                ->createFigureBuilder()
+                ->fromUuid($model->osmImageMobil)
+                ->setSize($model->osmSizeMobil)
+                ->setLinkHref('')
+                ->buildIfResourceExists()
+            ;
+        }
+
+        $template->set('bild_schmal', $bildSchmal);
+        $template->set('schmal_bis', max(1, (int) ($model->osmMobilBis ?: 767)));
 
         // Alle Markierungen mit ihren Koordinaten. Die erste ist die Hauptanschrift.
         $positionen = json_decode((string) $model->osmPositionen, true) ?: [];

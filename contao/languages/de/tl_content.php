@@ -36,6 +36,26 @@ $GLOBALS['TL_LANG']['tl_content']['osmHeight'] = [
     'Höhe des Kartenbildes',
     'In Pixeln. 600 ergibt zusammen mit 1920 ein flaches, breites Bild.',
 ];
+$GLOBALS['TL_LANG']['tl_content']['osmMobil'] = [
+    'Zweites Bild für schmale Bildschirme',
+    'Ein breites, flaches Kartenbild wird auf dem Telefon entweder sehr klein oder es zeigt nach dem Zuschneiden die Umgebung statt des Ortes. Mit dieser Einstellung entsteht beim Speichern ein zweites Bild in eigenem Format — meist quadratisch. Der Browser wählt es unterhalb der eingestellten Breite von selbst; übertragen wird immer nur eines der beiden.',
+];
+$GLOBALS['TL_LANG']['tl_content']['osmWidthMobil'] = [
+    'Breite des schmalen Kartenbildes',
+    'In Pixeln, wie beim breiten Bild das Anzeigemaß. Zusammen mit derselben Höhe ergibt sich ein quadratisches Bild.',
+];
+$GLOBALS['TL_LANG']['tl_content']['osmHeightMobil'] = [
+    'Höhe des schmalen Kartenbildes',
+    'In Pixeln. Gleiche Werte für Breite und Höhe ergeben ein Quadrat — auf dem Telefon die übliche Wahl.',
+];
+$GLOBALS['TL_LANG']['tl_content']['osmMobilBis'] = [
+    'Zweites Bild anzeigen bis',
+    'Fensterbreite in Pixeln, bis zu der die schmale Fassung erscheint. Darüber gilt das breite Bild. 767 trennt das Telefon vom Tablet.',
+];
+$GLOBALS['TL_LANG']['tl_content']['osmSizeMobil'] = [
+    'Bildgröße für das schmale Bild',
+    'Eine eigene Bildgröße ist nötig, weil das Seitenverhältnis von dem des breiten Bildes abweicht — eine darauf zugeschnittene Größe würde das Quadrat beschneiden. Ohne Angabe wird die Datei unverkleinert ausgeliefert, und sie entsteht in doppelter Auflösung.',
+];
 $GLOBALS['TL_LANG']['tl_content']['osmLinkTyp'] = [
     'Klick auf die Karte',
     'Wohin ein Klick auf das Kartenbild führt — bei mehreren Markierungen zur Hauptanschrift, also zur obersten Zeile. Der Link öffnet sich in einem neuen Fenster. Bei Google Maps verlässt der Besucher diese Website und landet bei Google — geladen wird vorher nichts.',

@@ -75,6 +75,13 @@ dafür nicht nötig. Nur beim Speichern im Backend holt der Server einmalig die 
 * **Farbe der Markierung** einstellbar, ebenso Breite und Höhe (Vorgabe 1920 × 600). Das
   sind die **Anzeigemaße**: Erzeugt wird das Bild mit der doppelten Auflösung, damit es auf
   hochauflösenden Bildschirmen scharf bleibt (siehe „Scharf auf Retina-Bildschirmen“).
+* **Zweites Bild für schmale Bildschirme**, wahlweise. Ein breites, flaches Kartenbild wird
+  auf dem Telefon entweder sehr klein oder es zeigt nach dem Zuschneiden die Umgebung statt
+  des Ortes. Mit dem Haken entsteht beim Speichern eine zweite Fassung in eigenem Format —
+  meist quadratisch (Vorgabe 800 × 800), sichtbar bis 767 Pixel Fensterbreite. Beide Fassungen
+  stecken in einem `<picture>`; übertragen wird immer nur die, die der Browser tatsächlich
+  anzeigt. Der Ausschnitt ist derselbe Ort, bei automatischem Maßstab mit einer eigens
+  berechneten Stufe — ins Quadrat passt seitlich weniger, dafür senkrecht mehr.
 * Das Bild ist eine gewöhnliche Datei im Dateimanager — die **Bildgrößen von Contao**
   greifen also ganz normal.
 
@@ -115,6 +122,25 @@ passenden Fassungen samt `srcset` und, sofern in der Bildgröße aktiviert, WebP
 ein normaler Bildschirm bekommt dann die einfache, ein Retina-Bildschirm die doppelte
 Auflösung. **Ohne zugewiesene Bildgröße liefert Contao das Original aus**, und die Seite
 wird durch die hohe Auflösung langsamer statt besser.
+
+## Zwei Formate: breit und schmal
+
+Dieselbe Karte in zwei Zuschnitten, damit sie auf dem Telefon nicht zur Briefmarke wird:
+
+| Feld | Vorgabe | Bedeutung |
+| --- | --- | --- |
+| Zweites Bild für schmale Bildschirme | aus | Schaltet die zweite Fassung ein |
+| Breite / Höhe des schmalen Kartenbildes | 800 × 800 | Anzeigemaße; gleiche Werte ergeben ein Quadrat |
+| Zweites Bild anzeigen bis | 767 | Fensterbreite, bis zu der die schmale Fassung gilt |
+| Bildgröße für das schmale Bild | — | Eigene Bildgröße, weil das Seitenverhältnis abweicht |
+
+Die schmale Fassung braucht eine **eigene** Bildgröße: Eine auf das breite Bild
+zugeschnittene Größe würde das Quadrat beschneiden. Ohne Angabe wird die Datei
+unverkleinert ausgeliefert — und sie entsteht, wie die breite, in doppelter Auflösung.
+
+Beide Fassungen liegen als Quellen in einem einzigen `<picture>`. Das ist bewusst so und
+nicht als zweites Bild mit `display: none` gelöst: Ein ausgeblendetes `<img>` würde
+trotzdem geladen, der Besucher bekäme also beide Dateien.
 
 ## Einstellungen
 

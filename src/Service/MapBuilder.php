@@ -46,15 +46,17 @@ class MapBuilder
      * und liegt die Bilddatei noch, passiert nichts — dann wird OpenStreetMap gar nicht
      * erst angefragt.
      *
-     * @param array       $einstellungen    punkte, zoom, breite, hoehe, markerFarbe
+     * @param array       $einstellungen    punkte, zoom, breite, hoehe, markerFarbe,
+     *                                      breiteMobil und hoeheMobil (0 = keine zweite Fassung)
      * @param string|null $fingerabdruckAlt gespeicherter Fingerabdruck des letzten Laufs
      * @param string|null $uuidAlt          bisher hinterlegte Bilddatei (Binärform)
+     * @param string|null $uuidMobilAlt     bisher hinterlegte Fassung für schmale Bildschirme
      *
-     * @return array{uuid: string, positionen: list<array{lat: float, lon: float, label: string, anzeigename: string}>, zoom: int, fingerabdruck: string, neu: bool}
+     * @return array{uuid: string, uuidMobil: string|null, positionen: list<array{lat: float, lon: float, label: string, anzeigename: string}>, zoom: int, fingerabdruck: string, neu: bool}
      *
      * @throws OsmMapException
      */
-    public function bauen(array $einstellungen, string|null $fingerabdruckAlt, string|null $uuidAlt): array
+    public function bauen(array $einstellungen, string|null $fingerabdruckAlt, string|null $uuidAlt, string|null $uuidMobilAlt = null): array
     {
         $this->framework->initialize();
 
@@ -69,6 +71,20 @@ class MapBuilder
         $hoehe = $this->grenzen((int) ($einstellungen['hoehe'] ?? 600), 100, 2560);
         $farbe = (string) ($einstellungen['markerFarbe'] ?? '#bf7500');
 
+        // Zweite Fassung für schmale Bildschirme. Ein breites, flaches Kartenbild wird auf
+        // dem Telefon entweder winzig oder es zeigt nach dem Zuschneiden die Umgebung statt
+        // des Ortes; deshalb entsteht auf Wunsch ein zweites Bild in eigenem Format —
+        // typischerweise quadratisch. Beide Male derselbe Mittelpunkt, nur ein anderer
+        // Ausschnitt. 0 bei einem der beiden Maße heißt: keine zweite Fassung.
+        $breiteMobil = (int) ($einstellungen['breiteMobil'] ?? 0);
+        $hoeheMobil = (int) ($einstellungen['hoeheMobil'] ?? 0);
+        $zweiteFassung = $breiteMobil > 0 && $hoeheMobil > 0;
+
+        if ($zweiteFassung) {
+            $breiteMobil = $this->grenzen($breiteMobil, 200, 2560);
+            $hoeheMobil = $this->grenzen($hoeheMobil, 100, 2560);
+        }
+
         // Der Fingerabdruck umfasst alles, was das Bild beeinflusst. Ändert sich nichts
         // davon, wird OpenStreetMap gar nicht erst angefragt.
         $fingerabdruck = md5(implode('|', [
@@ -77,20 +93,20 @@ class MapBuilder
             $breite,
             $hoehe,
             $farbe,
+            $zweiteFassung ? $breiteMobil.'x'.$hoeheMobil : 'ohne-zweite-fassung',
         ]));
 
-        if ($fingerabdruck === $fingerabdruckAlt && $uuidAlt) {
-            $vorhanden = FilesModel::findByUuid($uuidAlt);
-
-            if (null !== $vorhanden && is_file($this->projectDir.'/'.$vorhanden->path)) {
-                return [
-                    'uuid' => $uuidAlt,
-                    'positionen' => $this->positionenLesen($einstellungen['positionen'] ?? null),
-                    'zoom' => (int) ($einstellungen['gespeicherterZoom'] ?? 15),
-                    'fingerabdruck' => $fingerabdruck,
-                    'neu' => false,
-                ];
-            }
+        if ($fingerabdruck === $fingerabdruckAlt && $uuidAlt && $this->dateiLiegt($uuidAlt)
+            && (!$zweiteFassung || ($uuidMobilAlt && $this->dateiLiegt($uuidMobilAlt)))
+        ) {
+            return [
+                'uuid' => $uuidAlt,
+                'uuidMobil' => $zweiteFassung ? $uuidMobilAlt : null,
+                'positionen' => $this->positionenLesen($einstellungen['positionen'] ?? null),
+                'zoom' => (int) ($einstellungen['gespeicherterZoom'] ?? 15),
+                'fingerabdruck' => $fingerabdruck,
+                'neu' => false,
+            ];
         }
 
         // Alle Orte nachschlagen. Die erste Zeile ist die Hauptanschrift.
@@ -126,8 +142,31 @@ class MapBuilder
             throw new OsmMapException(\sprintf('Das Kartenbild "%s" ließ sich nicht in den Dateimanager übernehmen.', $pfad));
         }
 
+        $uuidMobil = null;
+
+        if ($zweiteFassung) {
+            // Bei „automatisch" wird der Maßstab für das zweite Format eigens bestimmt: In
+            // ein quadratisches Bild passt seitlich weniger, dafür senkrecht mehr — mit dem
+            // Wert des breiten Bildes lägen die Markierungen sonst außerhalb.
+            $zoomMobil = 'auto' === $zoomWunsch
+                ? $this->extent->passenderZoom($punkte, $breiteMobil, $hoeheMobil)
+                : $zoom;
+
+            $datenMobil = $this->renderer->rendern($punkte, $mittelLat, $mittelLon, $zoomMobil, $breiteMobil, $hoeheMobil, $farbe);
+            $pfadMobil = $this->dateiAblegen($datenMobil, $eingaben[0]['anschrift'], $fingerabdruck, '-schmal');
+
+            $modelMobil = FilesModel::findByPath($pfadMobil);
+
+            if (null === $modelMobil) {
+                throw new OsmMapException(\sprintf('Das Kartenbild "%s" ließ sich nicht in den Dateimanager übernehmen.', $pfadMobil));
+            }
+
+            $uuidMobil = $modelMobil->uuid;
+        }
+
         return [
             'uuid' => $model->uuid,
+            'uuidMobil' => $uuidMobil,
             // Gespeichert werden ALLE Positionen, nicht die Bildmitte: Der Klick auf die
             // Karte führt zur Hauptanschrift (erste Position), und der Balken kann jede
             // einzelne Markierung verlinken.
@@ -209,7 +248,17 @@ class MapBuilder
     /**
      * Schreibt die Bilddatei und meldet sie dem Dateimanager.
      */
-    private function dateiAblegen(string $daten, string $anschrift, string $fingerabdruck): string
+    /**
+     * Liegt die Datei zu dieser Kennung noch auf der Platte?
+     */
+    private function dateiLiegt(string $uuid): bool
+    {
+        $model = FilesModel::findByUuid($uuid);
+
+        return null !== $model && is_file($this->projectDir.'/'.$model->path);
+    }
+
+    private function dateiAblegen(string $daten, string $anschrift, string $fingerabdruck, string $zusatz = ''): string
     {
         $ordner = trim($this->zielordner, '/');
         $verzeichnis = $this->projectDir.'/'.$ordner;
@@ -234,7 +283,7 @@ class MapBuilder
 
         // Sprechender Dateiname aus der Anschrift, dazu der Fingerabdruck: So bleibt die
         // Datei erkennbar, und eine geänderte Karte überschreibt die alte nicht.
-        $name = 'karte-'.$this->dateinameAusAnschrift($anschrift).'-'.substr($fingerabdruck, 0, 8).'.jpg';
+        $name = 'karte-'.$this->dateinameAusAnschrift($anschrift).'-'.substr($fingerabdruck, 0, 8).$zusatz.'.jpg';
         $pfad = $ordner.'/'.$name;
 
         $datei = new File($pfad);

@@ -57,7 +57,8 @@ class RebuildMapsCommand extends Command
         $io = new SymfonyStyle($input, $output);
 
         $sql = "SELECT id, osmPoints, osmZoom, osmZoomEffektiv, osmWidth, osmHeight,
-                       osmMarkerColor, osmHash, osmImage, osmPositionen
+                       osmMobil, osmWidthMobil, osmHeightMobil,
+                       osmMarkerColor, osmHash, osmImage, osmImageMobil, osmPositionen
                   FROM tl_content WHERE type = 'osm_map'";
         $parameter = [];
 
@@ -91,9 +92,12 @@ class RebuildMapsCommand extends Command
                         'markerFarbe' => (string) $element['osmMarkerColor'],
                         'positionen' => (string) $element['osmPositionen'],
                         'gespeicherterZoom' => (int) $element['osmZoomEffektiv'],
+                        'breiteMobil' => $element['osmMobil'] ? (int) $element['osmWidthMobil'] : 0,
+                        'hoeheMobil' => $element['osmMobil'] ? (int) $element['osmHeightMobil'] : 0,
                     ],
                     $input->getOption('force') ? null : ((string) $element['osmHash'] ?: null),
                     $input->getOption('force') ? null : ($element['osmImage'] ?: null),
+                    $input->getOption('force') ? null : ($element['osmImageMobil'] ?: null),
                 );
             } catch (OsmMapException $e) {
                 $io->writeln(\sprintf('  #%-5s <error>%s</error>', $element['id'], $e->getMessage()));
@@ -104,6 +108,7 @@ class RebuildMapsCommand extends Command
 
             $this->connection->update('tl_content', [
                 'osmImage' => $ergebnis['uuid'],
+                'osmImageMobil' => $ergebnis['uuidMobil'],
                 'osmPositionen' => json_encode($ergebnis['positionen'], JSON_UNESCAPED_UNICODE),
                 'osmHash' => $ergebnis['fingerabdruck'],
                 'osmZoomEffektiv' => $ergebnis['zoom'],

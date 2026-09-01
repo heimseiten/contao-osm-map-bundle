@@ -36,6 +36,26 @@ $GLOBALS['TL_LANG']['tl_content']['osmHeight'] = [
     'Map height',
     'In pixels. Together with a width of 1920, a height of 600 gives a flat, wide image.',
 ];
+$GLOBALS['TL_LANG']['tl_content']['osmMobil'] = [
+    'Second image for narrow screens',
+    'A wide, flat map either becomes tiny on a phone or, once cropped, shows the surroundings instead of the place itself. With this setting a second image in its own format — usually square — is generated on save. The browser picks it below the width set here; only one of the two is ever transferred.',
+];
+$GLOBALS['TL_LANG']['tl_content']['osmWidthMobil'] = [
+    'Width of the narrow map',
+    'In pixels, the display size as with the wide image. Combined with the same height this yields a square image.',
+];
+$GLOBALS['TL_LANG']['tl_content']['osmHeightMobil'] = [
+    'Height of the narrow map',
+    'In pixels. Identical values for width and height produce a square — the usual choice on a phone.',
+];
+$GLOBALS['TL_LANG']['tl_content']['osmMobilBis'] = [
+    'Show second image up to',
+    'Window width in pixels up to which the narrow version appears. Above it, the wide image applies. 767 separates phone from tablet.',
+];
+$GLOBALS['TL_LANG']['tl_content']['osmSizeMobil'] = [
+    'Image size for the narrow image',
+    'A separate image size is required because the aspect ratio differs from the wide image — a size cropped for that one would cut into the square. Without an entry the file is delivered unscaled, and it is generated at twice the resolution.',
+];
 $GLOBALS['TL_LANG']['tl_content']['osmLinkTyp'] = [
     'Click on the map',
     'Where a click on the map image leads — with several markers, to the main address in the first row. The link opens in a new window. With Google Maps the visitor leaves this website and ends up at Google — nothing is loaded beforehand.',
