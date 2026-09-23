@@ -54,6 +54,8 @@ class OsmMapCallbacks
                     'breite' => (int) $datensatz->osmWidth,
                     'hoehe' => (int) $datensatz->osmHeight,
                     'markerFarbe' => (string) $datensatz->osmMarkerColor,
+                    'markerForm' => (string) $datensatz->osmMarkerForm,
+                    'kartenstil' => (string) $datensatz->osmKartenstil,
                     'positionen' => (string) $datensatz->osmPositionen,
                     'gespeicherterZoom' => (int) $datensatz->osmZoomEffektiv,
                     // Ohne den Haken bleiben beide Maße 0 — dann entsteht keine zweite Fassung.

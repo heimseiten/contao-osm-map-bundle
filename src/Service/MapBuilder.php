@@ -33,6 +33,7 @@ class MapBuilder
         private readonly Geocoder $geocoder,
         private readonly MapImageRenderer $renderer,
         private readonly MapExtent $extent,
+        private readonly MarkerRenderer $marker,
         private readonly ContaoFramework $framework,
         private readonly string $projectDir,
         private readonly string $zielordner,
@@ -46,8 +47,9 @@ class MapBuilder
      * und liegt die Bilddatei noch, passiert nichts — dann wird OpenStreetMap gar nicht
      * erst angefragt.
      *
-     * @param array       $einstellungen    punkte, zoom, breite, hoehe, markerFarbe,
-     *                                      breiteMobil und hoeheMobil (0 = keine zweite Fassung)
+     * @param array       $einstellungen    punkte, zoom, breite, hoehe, markerFarbe, markerForm,
+     *                                      kartenstil, breiteMobil und hoeheMobil
+     *                                      (0 = keine zweite Fassung)
      * @param string|null $fingerabdruckAlt gespeicherter Fingerabdruck des letzten Laufs
      * @param string|null $uuidAlt          bisher hinterlegte Bilddatei (Binärform)
      * @param string|null $uuidMobilAlt     bisher hinterlegte Fassung für schmale Bildschirme
@@ -71,6 +73,12 @@ class MapBuilder
         $hoehe = $this->grenzen((int) ($einstellungen['hoehe'] ?? 600), 100, 2560);
         $farbe = (string) ($einstellungen['markerFarbe'] ?? '#bf7500');
 
+        // Unbekannte oder fehlende Werte: so, wie Karten vor der Auswahl aussahen.
+        $form = (string) ($einstellungen['markerForm'] ?? '');
+        $form = \in_array($form, MarkerRenderer::AUSWAHL, true) ? $form : MarkerRenderer::BISHER;
+        $stil = (string) ($einstellungen['kartenstil'] ?? '');
+        $stil = \in_array($stil, MapStyle::AUSWAHL, true) ? $stil : MapStyle::STANDARD;
+
         // Zweite Fassung für schmale Bildschirme. Ein breites, flaches Kartenbild wird auf
         // dem Telefon entweder winzig oder es zeigt nach dem Zuschneiden die Umgebung statt
         // des Ortes; deshalb entsteht auf Wunsch ein zweites Bild in eigenem Format —
@@ -87,14 +95,27 @@ class MapBuilder
 
         // Der Fingerabdruck umfasst alles, was das Bild beeinflusst. Ändert sich nichts
         // davon, wird OpenStreetMap gar nicht erst angefragt.
-        $fingerabdruck = md5(implode('|', [
+        $teile = [
             json_encode($eingaben),
             $zoomWunsch,
             $breite,
             $hoehe,
             $farbe,
             $zweiteFassung ? $breiteMobil.'x'.$hoeheMobil : 'ohne-zweite-fassung',
-        ]));
+        ];
+
+        // Form und Kartenstil gibt es seit Version 1.2. Sie zählen nur, wenn sie vom
+        // bisherigen Aussehen abweichen — so behalten vorhandene Karten ihren Fingerabdruck
+        // und werden nach dem Update nicht ohne Anlass neu erzeugt.
+        if (MarkerRenderer::BISHER !== $form) {
+            $teile[] = 'form:'.$form;
+        }
+
+        if (MapStyle::STANDARD !== $stil) {
+            $teile[] = 'stil:'.$stil;
+        }
+
+        $fingerabdruck = md5(implode('|', $teile));
 
         if ($fingerabdruck === $fingerabdruckAlt && $uuidAlt && $this->dateiLiegt($uuidAlt)
             && (!$zweiteFassung || ($uuidMobilAlt && $this->dateiLiegt($uuidMobilAlt)))
@@ -123,16 +144,29 @@ class MapBuilder
         }
 
         // Mittelpunkt und Maßstab: Bei mehreren Orten liegt die Mitte zwischen ihnen, und
-        // „automatisch" wählt die näheste Stufe, bei der noch alle ins Bild passen.
+        // „automatisch" wählt die näheste Stufe, bei der noch alle ins Bild passen — mit
+        // Platz für die Köpfe, falls die Markierungen Pins sind.
         [$mittelLat, $mittelLon] = \count($punkte) > 1
             ? $this->extent->mittelpunkt($punkte)
             : [$punkte[0]['lat'], $punkte[0]['lon']];
 
+        $kopf = $this->marker->kopfhoehe($form);
+
         $zoom = 'auto' === $zoomWunsch
-            ? $this->extent->passenderZoom($punkte, $breite, $hoehe)
+            ? $this->extent->passenderZoom($punkte, $breite, $hoehe, kopf: $kopf)
             : $this->grenzen((int) $zoomWunsch, 3, 19);
 
-        $daten = $this->renderer->rendern($punkte, $mittelLat, $mittelLon, $zoom, $breite, $hoehe, $farbe);
+        $daten = $this->renderer->rendern(
+            $punkte,
+            $this->mitteFuerKoepfe($punkte, $mittelLat, $zoom, $kopf),
+            $mittelLon,
+            $zoom,
+            $breite,
+            $hoehe,
+            $farbe,
+            markerForm: $form,
+            kartenstil: $stil,
+        );
 
         $pfad = $this->dateiAblegen($daten, $eingaben[0]['anschrift'], $fingerabdruck);
 
@@ -149,10 +183,20 @@ class MapBuilder
             // ein quadratisches Bild passt seitlich weniger, dafür senkrecht mehr — mit dem
             // Wert des breiten Bildes lägen die Markierungen sonst außerhalb.
             $zoomMobil = 'auto' === $zoomWunsch
-                ? $this->extent->passenderZoom($punkte, $breiteMobil, $hoeheMobil)
+                ? $this->extent->passenderZoom($punkte, $breiteMobil, $hoeheMobil, kopf: $kopf)
                 : $zoom;
 
-            $datenMobil = $this->renderer->rendern($punkte, $mittelLat, $mittelLon, $zoomMobil, $breiteMobil, $hoeheMobil, $farbe);
+            $datenMobil = $this->renderer->rendern(
+                $punkte,
+                $this->mitteFuerKoepfe($punkte, $mittelLat, $zoomMobil, $kopf),
+                $mittelLon,
+                $zoomMobil,
+                $breiteMobil,
+                $hoeheMobil,
+                $farbe,
+                markerForm: $form,
+                kartenstil: $stil,
+            );
             $pfadMobil = $this->dateiAblegen($datenMobil, $eingaben[0]['anschrift'], $fingerabdruck, '-schmal');
 
             $modelMobil = FilesModel::findByPath($pfadMobil);
@@ -175,6 +219,24 @@ class MapBuilder
             'fingerabdruck' => $fingerabdruck,
             'neu' => true,
         ];
+    }
+
+    /**
+     * Mitte des Ausschnitts, wenn die Markierungen über ihren Ort hinausragen (Pins).
+     *
+     * Bei mehreren Orten rückt der Ausschnitt um die halbe Kopfhöhe nach oben: Dann haben
+     * die Köpfe oben so viel Luft wie die Spitzen unten. Bei einem einzigen Ort bleibt die
+     * Spitze in der Bildmitte, wie bei Google Maps.
+     *
+     * @param list<array{lat: float, lon: float}> $punkte
+     */
+    private function mitteFuerKoepfe(array $punkte, float $mittelLat, int $zoom, int $kopf): float
+    {
+        if ($kopf <= 0 || \count($punkte) < 2) {
+            return $mittelLat;
+        }
+
+        return $this->extent->breiteVerschieben($mittelLat, $zoom, $kopf / 2);
     }
 
     /**

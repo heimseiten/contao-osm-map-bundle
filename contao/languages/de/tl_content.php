@@ -10,6 +10,7 @@ declare(strict_types=1);
  */
 
 $GLOBALS['TL_LANG']['tl_content']['osm_legend'] = 'Karte';
+$GLOBALS['TL_LANG']['tl_content']['osm_look_legend'] = 'Aussehen';
 $GLOBALS['TL_LANG']['tl_content']['osm_link_legend'] = 'Verlinkung und Beschriftung';
 
 $GLOBALS['TL_LANG']['tl_content']['osmPoints'] = [
@@ -24,9 +25,17 @@ $GLOBALS['TL_LANG']['tl_content']['osmZoom'] = [
     'Maßstab',
     'Je höher der Wert, desto näher die Ansicht. 15 zeigt die Straße mit Umgebung, 17 einzelne Häuser, 12 den ganzen Ort. „Automatisch“ richtet sich nach den gesetzten Markierungen und zeigt alle.',
 ];
+$GLOBALS['TL_LANG']['tl_content']['osmKartenstil'] = [
+    'Kartenstil',
+    'Farbgebung der Karte. Die Kartendaten bleiben dieselben von OpenStreetMap; umgefärbt wird beim Speichern auf dem eigenen Server, es kommt also kein weiterer Kartendienst hinzu. „Gedämpft“ und „Hell“ drängen sich neben einer farbigen Seitengestaltung am wenigsten auf. „Dunkel“ und „Nacht“ passen zu dunklen Seiten; dort wird auch der Balken mit der Beschriftung dunkel.',
+];
+$GLOBALS['TL_LANG']['tl_content']['osmMarkerForm'] = [
+    'Form der Markierung',
+    'Der Pin steht mit der Spitze auf dem Ort, wie bei Google Maps. Mit Nummer oder Buchstabe lassen sich mehrere Orte auseinanderhalten und im Text darauf verweisen — gezählt wird in der Reihenfolge der Zeilen. Karten, die vor dieser Einstellung entstanden sind, behalten den Punkt.',
+];
 $GLOBALS['TL_LANG']['tl_content']['osmMarkerColor'] = [
     'Farbe der Markierung',
-    'Farbe der Punkte, die die Anschriften markieren.',
+    'Farbe der Pins, Punkte oder Fähnchen. Symbole und das Loch im Pin passen sich an: auf dunklen Farben hell, auf hellen dunkel.',
 ];
 $GLOBALS['TL_LANG']['tl_content']['osmWidth'] = [
     'Breite des Kartenbildes',
@@ -63,6 +72,28 @@ $GLOBALS['TL_LANG']['tl_content']['osmLinkTyp'] = [
 $GLOBALS['TL_LANG']['tl_content']['osmOverlayText'] = [
     'Beschriftung über dem unteren Bildrand',
     'Erscheint als schmaler, halbdurchsichtiger Balken auf der Karte. Diese Platzhalter werden zu Links: <b>{osm}</b> Karte bei OpenStreetMap · <b>{google}</b> Karte bei Google Maps · <b>{route}</b> Routenplanung bei OpenStreetMap · <b>{route-google}</b> Routenplanung bei Google Maps. So lassen sich auch mehrere Ziele in einem Satz nennen. Eigene Beschriftung mit {osm:Karte ansehen}.<br>Bei mehreren Markierungen wählt eine angehängte Nummer die gemeinte aus: <b>{osm-2}</b> führt zur zweiten Markierung und trägt deren Beschriftung als Linktext — etwa „Standorte: {osm-1} und {osm-2}“. Ohne Nummer gilt die erste Markierung und der Name des Dienstes. Leer lassen, wenn kein Balken erscheinen soll.',
+];
+
+$GLOBALS['TL_LANG']['tl_content']['osmKartenstile'] = [
+    'standard' => 'Standard – die gewohnten Farben von OpenStreetMap',
+    'gedaempft' => 'Gedämpft – dieselben Farben, deutlich zurückgenommen',
+    'hell' => 'Hell – zartes Grau, die Markierung sticht hervor',
+    'graustufen' => 'Graustufen',
+    'retro' => 'Retro – warme Papiertöne, blaugrünes Wasser',
+    'dunkel' => 'Dunkel – für dunkel gestaltete Seiten',
+    'nacht' => 'Nacht – dunkles Blau',
+];
+
+$GLOBALS['TL_LANG']['tl_content']['osmMarkerFormen'] = [
+    'pin' => 'Pin wie bei Google Maps (Vorgabe)',
+    'pin_nummer' => 'Pin mit Nummer – 1, 2, 3 … nach der Reihenfolge der Zeilen',
+    'pin_buchstabe' => 'Pin mit Buchstabe – A, B, C …',
+    'pin_haus' => 'Pin mit Haus',
+    'pin_stern' => 'Pin mit Stern',
+    'pin_herz' => 'Pin mit Herz',
+    'punkt' => 'Punkt mit weißem Rand (bisherige Darstellung)',
+    'punkt_hof' => 'Punkt mit hellem Hof',
+    'fahne' => 'Fähnchen',
 ];
 
 $GLOBALS['TL_LANG']['tl_content']['osmLinkTypen'] = [

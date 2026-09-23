@@ -15,9 +15,12 @@ services:
             $projectDir: '%kernel.project_dir%'
             $userAgent: '%heimseiten_osm_map.user_agent%'
 
+    # Das Projektverzeichnis braucht der Renderer für den Zwischenspeicher der Kacheln
+    # (var/cache/osm-kacheln).
     Heimseiten\ContaoOsmMapBundle\Service\MapImageRenderer:
         arguments:
             $userAgent: '%heimseiten_osm_map.user_agent%'
+            $projectDir: '%kernel.project_dir%'
 
     Heimseiten\ContaoOsmMapBundle\Service\MapBuilder:
         arguments:

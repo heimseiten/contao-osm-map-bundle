@@ -58,7 +58,8 @@ class RebuildMapsCommand extends Command
 
         $sql = "SELECT id, osmPoints, osmZoom, osmZoomEffektiv, osmWidth, osmHeight,
                        osmMobil, osmWidthMobil, osmHeightMobil,
-                       osmMarkerColor, osmHash, osmImage, osmImageMobil, osmPositionen
+                       osmMarkerColor, osmMarkerForm, osmKartenstil,
+                       osmHash, osmImage, osmImageMobil, osmPositionen
                   FROM tl_content WHERE type = 'osm_map'";
         $parameter = [];
 
@@ -90,6 +91,8 @@ class RebuildMapsCommand extends Command
                         'breite' => (int) $element['osmWidth'],
                         'hoehe' => (int) $element['osmHeight'],
                         'markerFarbe' => (string) $element['osmMarkerColor'],
+                        'markerForm' => (string) $element['osmMarkerForm'],
+                        'kartenstil' => (string) $element['osmKartenstil'],
                         'positionen' => (string) $element['osmPositionen'],
                         'gespeicherterZoom' => (int) $element['osmZoomEffektiv'],
                         'breiteMobil' => $element['osmMobil'] ? (int) $element['osmWidthMobil'] : 0,

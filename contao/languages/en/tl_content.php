@@ -10,6 +10,7 @@ declare(strict_types=1);
  */
 
 $GLOBALS['TL_LANG']['tl_content']['osm_legend'] = 'Map';
+$GLOBALS['TL_LANG']['tl_content']['osm_look_legend'] = 'Appearance';
 $GLOBALS['TL_LANG']['tl_content']['osm_link_legend'] = 'Links and caption';
 
 $GLOBALS['TL_LANG']['tl_content']['osmPoints'] = [
@@ -24,9 +25,17 @@ $GLOBALS['TL_LANG']['tl_content']['osmZoom'] = [
     'Scale',
     'The higher the value, the closer the view. 15 shows the street and its surroundings, 17 individual houses, 12 the whole town. “Automatic” follows the markers that are set and shows all of them.',
 ];
+$GLOBALS['TL_LANG']['tl_content']['osmKartenstil'] = [
+    'Map style',
+    'Colour scheme of the map. The map data stays the same from OpenStreetMap; the tiles are recoloured on the site’s own server when saving, so no further map service is involved. “Muted” and “Light” are the least obtrusive next to a colourful page design. “Dark” and “Night” suit dark pages; there the caption bar turns dark as well.',
+];
+$GLOBALS['TL_LANG']['tl_content']['osmMarkerForm'] = [
+    'Marker shape',
+    'The pin stands with its tip on the location, as on Google Maps. Numbers or letters tell several locations apart and allow the text to refer to them — counted in the order of the rows. Maps created before this setting existed keep the dot.',
+];
 $GLOBALS['TL_LANG']['tl_content']['osmMarkerColor'] = [
     'Marker colour',
-    'Colour of the dots that mark the addresses.',
+    'Colour of the pins, dots or flags. Symbols and the hole in the pin adapt: light on dark colours, dark on light ones.',
 ];
 $GLOBALS['TL_LANG']['tl_content']['osmWidth'] = [
     'Map width',
@@ -63,6 +72,28 @@ $GLOBALS['TL_LANG']['tl_content']['osmLinkTyp'] = [
 $GLOBALS['TL_LANG']['tl_content']['osmOverlayText'] = [
     'Caption above the bottom edge',
     'Appears as a narrow, semi-transparent bar on the map. These placeholders turn into links: <b>{osm}</b> map at OpenStreetMap · <b>{google}</b> map at Google Maps · <b>{route}</b> directions at OpenStreetMap · <b>{route-google}</b> directions at Google Maps. That way a single sentence can name several destinations. A custom label is written as {osm:View the map}.<br>With several markers, an appended number selects the one meant: <b>{osm-2}</b> refers to the second marker and carries its caption as the link text — for example “Locations: {osm-1} and {osm-2}”. Without a number, the first marker and the name of the service apply. Leave empty for no bar.',
+];
+
+$GLOBALS['TL_LANG']['tl_content']['osmKartenstile'] = [
+    'standard' => 'Standard – the familiar OpenStreetMap colours',
+    'gedaempft' => 'Muted – the same colours, clearly toned down',
+    'hell' => 'Light – soft grey, the marker stands out',
+    'graustufen' => 'Greyscale',
+    'retro' => 'Retro – warm paper tones, blue-green water',
+    'dunkel' => 'Dark – for dark page designs',
+    'nacht' => 'Night – dark blue',
+];
+
+$GLOBALS['TL_LANG']['tl_content']['osmMarkerFormen'] = [
+    'pin' => 'Pin as on Google Maps (default)',
+    'pin_nummer' => 'Pin with number – 1, 2, 3 … in the order of the rows',
+    'pin_buchstabe' => 'Pin with letter – A, B, C …',
+    'pin_haus' => 'Pin with house',
+    'pin_stern' => 'Pin with star',
+    'pin_herz' => 'Pin with heart',
+    'punkt' => 'Dot with white border (previous appearance)',
+    'punkt_hof' => 'Dot with light halo',
+    'fahne' => 'Flag',
 ];
 
 $GLOBALS['TL_LANG']['tl_content']['osmLinkTypen'] = [

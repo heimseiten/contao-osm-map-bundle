@@ -14,6 +14,8 @@ declare(strict_types=1);
 
 use Doctrine\DBAL\Platforms\AbstractMySQLPlatform;
 use Heimseiten\ContaoOsmMapBundle\Service\MapLinks;
+use Heimseiten\ContaoOsmMapBundle\Service\MapStyle;
+use Heimseiten\ContaoOsmMapBundle\Service\MarkerRenderer;
 
 /*
  * Das Karten-Element. Auszufüllen ist im Normalfall nur die erste Zeile der
@@ -24,7 +26,8 @@ use Heimseiten\ContaoOsmMapBundle\Service\MapLinks;
  */
 $GLOBALS['TL_DCA']['tl_content']['palettes']['osm_map'] =
     '{type_legend},type,headline;'
-    .'{osm_legend},osmPoints,osmZoom,osmWidth,osmHeight,osmMobil,osmMarkerColor;'
+    .'{osm_legend},osmPoints,osmZoom,osmWidth,osmHeight,osmMobil;'
+    .'{osm_look_legend},osmKartenstil,osmMarkerForm,osmMarkerColor;'
     .'{osm_link_legend},osmLinkTyp,osmOverlayText;'
     .'{image_legend},size,overwriteMeta;'
     .'{template_legend:hide},customTpl;'
@@ -81,6 +84,32 @@ $felder = [
         'reference' => &$GLOBALS['TL_LANG']['tl_content']['osmZoomStufen'],
         'eval' => ['tl_class' => 'w50', 'includeBlankOption' => false],
         'sql' => "varchar(4) NOT NULL default 'auto'",
+    ],
+    /*
+     * Farbgebung der Karte. Die Kacheln bleiben dieselben von OpenStreetMap, umgefärbt wird
+     * beim Speichern auf dem eigenen Server.
+     */
+    'osmKartenstil' => [
+        'inputType' => 'select',
+        'exclude' => true,
+        'default' => MapStyle::STANDARD,
+        'options' => MapStyle::AUSWAHL,
+        'reference' => &$GLOBALS['TL_LANG']['tl_content']['osmKartenstile'],
+        'eval' => ['tl_class' => 'w50', 'includeBlankOption' => false],
+        'sql' => "varchar(16) NOT NULL default '".MapStyle::STANDARD."'",
+    ],
+    /*
+     * Neue Karten bekommen den Pin wie bei Google Maps. Karten aus der Zeit vor diesem Feld
+     * behalten den Punkt — dafür sorgt beim Update die MarkerFormMigration.
+     */
+    'osmMarkerForm' => [
+        'inputType' => 'select',
+        'exclude' => true,
+        'default' => MarkerRenderer::VORGABE,
+        'options' => MarkerRenderer::AUSWAHL,
+        'reference' => &$GLOBALS['TL_LANG']['tl_content']['osmMarkerFormen'],
+        'eval' => ['tl_class' => 'w50 clr', 'includeBlankOption' => false],
+        'sql' => "varchar(16) NOT NULL default '".MarkerRenderer::VORGABE."'",
     ],
     'osmMarkerColor' => [
         'inputType' => 'text',

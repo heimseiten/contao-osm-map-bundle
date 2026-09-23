@@ -56,8 +56,11 @@ class MapExtent
      * die alle Orte zeigt.
      *
      * @param list<array{lat: float, lon: float}> $punkte
+     * @param int                                 $kopf   wie weit die Markierung über ihren Ort
+     *                                                    hinausragt (Pin), in Pixeln; so viel
+     *                                                    Höhe muss zusätzlich frei bleiben
      */
-    public function passenderZoom(array $punkte, int $breite, int $hoehe, int $min = 3, int $max = 19): int
+    public function passenderZoom(array $punkte, int $breite, int $hoehe, int $min = 3, int $max = 19, int $kopf = 0): int
     {
         if (\count($punkte) < 2) {
             return 16; // ein einzelner Ort: Straßenebene
@@ -81,12 +84,27 @@ class MapExtent
             $spanneX = abs($this->pixelX($lonMax, $zoom) - $this->pixelX($lonMin, $zoom));
             $spanneY = abs($this->pixelY($latMin, $zoom) - $this->pixelY($latMax, $zoom));
 
-            if ($spanneX <= $nutzBreite && $spanneY <= $nutzHoehe) {
+            if ($spanneX <= $nutzBreite && $spanneY + $kopf <= $nutzHoehe) {
                 return $zoom;
             }
         }
 
         return $min;
+    }
+
+    /**
+     * Rückt eine geografische Breite um so viele Pixel nach Norden, wie sie bei dieser
+     * Zoomstufe ausmachen — der Ausschnitt wandert damit im Bild nach oben.
+     *
+     * Gebraucht für Pins: Sie stehen über ihrem Ort. Liegt der Ausschnitt genau mittig
+     * zwischen den Orten, stoßen die Köpfe oben früher an den Rand als die Spitzen unten.
+     */
+    public function breiteVerschieben(float $lat, int $zoom, float $pixel): float
+    {
+        $welt = 2 ** $zoom * self::KACHEL;
+        $y = $this->pixelY($lat, $zoom) - $pixel;
+
+        return rad2deg(atan(sinh(M_PI * (1 - 2 * $y / $welt))));
     }
 
     private function pixelX(float $lon, int $zoom): float

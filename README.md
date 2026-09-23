@@ -72,6 +72,12 @@ dafür nicht nötig. Nur beim Speichern im Backend holt der Server einmalig die 
   [Schokoladenmuseum]*. Ohne Nummer bleibt es beim Namen des Dienstes und bei der ersten
   Markierung — bestehende Texte verhalten sich also unverändert. Verweist eine Nummer ins
   Leere, bleibt der Platzhalter sichtbar stehen, statt still zu verschwinden.
+* **Form der Markierung** wählbar. Vorgabe ist ein **Pin wie bei Google Maps**, der mit der
+  Spitze auf dem Ort steht. Außerdem gibt es den Pin mit Nummer oder Buchstabe, mit Haus,
+  Stern oder Herz, den Punkt mit weißem Rand, den Punkt mit hellem Hof und das Fähnchen —
+  siehe „Kartenstile und Formen der Markierung“.
+* **Kartenstil** wählbar: Standard, Gedämpft, Hell, Graustufen, Retro, Dunkel und Nacht.
+  Umgefärbt wird auf dem eigenen Server, es kommt kein weiterer Kartendienst hinzu.
 * **Farbe der Markierung** einstellbar, ebenso Breite und Höhe (Vorgabe 1920 × 600). Das
   sind die **Anzeigemaße**: Erzeugt wird das Bild mit der doppelten Auflösung, damit es auf
   hochauflösenden Bildschirmen scharf bleibt (siehe „Scharf auf Retina-Bildschirmen“).
@@ -98,9 +104,17 @@ Composer die Installation und sagt das, statt später beim Speichern zu scheiter
 
 Eine **Schrift muss auf dem Server nicht installiert sein**: Das Bundle bringt eine mit
 (`res/fonts/`, DejaVu Sans auf die europäischen Latein-Bereiche gekürzt, 45 KB, freie
-Lizenz). Nur wenn GD ohne FreeType-Unterstützung übersetzt wurde — selten, aber möglich —
-bleiben die Schilder weg; die Karte selbst entsteht dann trotzdem. Was vorhanden ist,
-zeigt eine `phpinfo()`-Ausgabe im Abschnitt *gd* unter „FreeType Support“.
+Lizenz), dazu eine fette Fassung nur mit Ziffern und Großbuchstaben (5 KB) für Nummer und
+Buchstabe im Pin. Nur wenn GD ohne FreeType-Unterstützung übersetzt wurde — selten, aber
+möglich — bleiben die Schilder weg, und der Pin trägt statt Nummer oder Buchstabe das
+schlichte Loch; die Karte selbst entsteht dann trotzdem. Was vorhanden ist, zeigt eine
+`phpinfo()`-Ausgabe im Abschnitt *gd* unter „FreeType Support“.
+
+**Aktualisierung von Version 1.1:** Vorhandene Karten behalten ihren Punkt. Die Migration
+trägt ihn bei allen Karten-Elementen ein, bevor die neue Spalte ihre Vorgabe (Pin) erhält,
+und der Fingerabdruck dieser Karten bleibt derselbe — sie werden also auch nicht neu
+erzeugt. Der Pin gilt nur für Karten, die nach dem Update angelegt werden, oder wo er im
+Element ausgewählt wird.
 
 Beim **Speichern** muss der Server ausgehende Verbindungen zu
 `nominatim.openstreetmap.org` und `tile.openstreetmap.org` aufbauen dürfen. Für Besucher
@@ -141,6 +155,52 @@ unverkleinert ausgeliefert — und sie entsteht, wie die breite, in doppelter Au
 Beide Fassungen liegen als Quellen in einem einzigen `<picture>`. Das ist bewusst so und
 nicht als zweites Bild mit `display: none` gelöst: Ein ausgeblendetes `<img>` würde
 trotzdem geladen, der Besucher bekäme also beide Dateien.
+
+## Kartenstile und Formen der Markierung
+
+![Die sieben Kartenstile und die Formen der Markierung](https://raw.githubusercontent.com/heimseiten/contao-osm-map-bundle/main/doc/kartenstile.jpg)
+
+Die Karte kommt in jedem Stil aus denselben Kacheln von OpenStreetMap; umgefärbt werden sie
+beim Speichern auf dem eigenen Server. Es braucht also keinen weiteren Kartendienst, keinen
+Zugangsschlüssel und keine weitere Adresse, die der Server erreichen muss, und die
+Namensnennung bleibt dieselbe. Das Umfärben kostet kaum Zeit: Die Kacheln sind
+Palettenbilder mit höchstens 256 Farben, umgerechnet werden nur diese.
+
+| Stil | Wirkung |
+| --- | --- |
+| Standard | die gewohnten Farben von OpenStreetMap |
+| Gedämpft | dieselben Farben, deutlich zurückgenommen |
+| Hell | zartes Grau, die Markierung sticht hervor |
+| Graustufen | schwarz-weiß |
+| Retro | warme Papiertöne, blaugrünes Wasser |
+| Dunkel | für dunkel gestaltete Seiten |
+| Nacht | dunkles Blau |
+
+Bei „Dunkel“ und „Nacht“ wird auch der Balken mit der Beschriftung dunkel (Klasse
+`osm-map--dunkel`).
+
+**Die Formen der Markierung:**
+
+* **Pin wie bei Google Maps** (Vorgabe) — die Verhältnisse folgen dem Material-Symbol
+  „place“ von Google: runder Kopf mit Loch, die Spitze auf dem Ort, darunter ein weicher
+  Schatten.
+* **Pin mit Nummer** oder **mit Buchstabe** — 1, 2, 3 … bzw. A, B, C … in der Reihenfolge
+  der Zeilen. So lässt sich im Text auf einzelne Orte verweisen.
+* **Pin mit Haus, Stern oder Herz**.
+* **Punkt mit weißem Rand** — die Darstellung bis Version 1.1.
+* **Punkt mit hellem Hof** — wie der eigene Standort in Karten-Apps.
+* **Fähnchen** — der Fuß der Stange steht auf dem Ort.
+
+Loch und Symbole im Pin richten sich nach der gewählten Farbe: Auf dunklen Farben sind sie
+hell, auf hellen dunkel. Ist die Farbe so hell, dass sie auf dem weißen Schild kaum zu
+lesen wäre, erscheint die Beschriftung in einer dunkleren Fassung derselben Farbe.
+
+Alle Markierungen werden in vierfacher Größe gezeichnet und dann verkleinert — GD selbst
+glättet gefüllte Flächen nicht, die Kanten wären sonst gezackt.
+
+Ein Pin steht **über** seinem Ort. Beim automatischen Maßstab bleibt deshalb oben Platz für
+die Köpfe, und bei mehreren Orten rückt der Ausschnitt um die halbe Pin-Höhe nach oben. Bei
+einem einzigen Ort bleibt die Spitze in der Bildmitte, wie bei Google Maps.
 
 ## Einstellungen
 
@@ -186,6 +246,7 @@ werden:
 
 ```css
 .osm-map            /* der Rahmen um alles */
+.osm-map--dunkel    /* derselbe Rahmen bei den Kartenstilen „Dunkel“ und „Nacht“ */
 .osm-map__flaeche   /* der Link um das Bild */
 .osm-map__balken    /* die Beschriftung über dem unteren Bildrand */
 ```
@@ -202,6 +263,11 @@ ein Klick daneben landet also auf dem verlinkten Bild.
   mit aussagekräftigem User-Agent und höchstens einer Suchanfrage je Sekunde, wie es die
   Nutzungsbedingungen verlangen. Das Ergebnis wird gespeichert, nicht bei jedem Aufruf
   neu geholt.
+* **Geladene Kacheln bleiben eine Woche** im Zwischenspeicher (`var/cache/osm-kacheln`) —
+  die Nutzungsbedingungen verlangen, Kacheln lokal vorzuhalten. Wer Kartenstil oder
+  Markierung ausprobiert, fragt dieselben Kacheln also nicht jedes Mal neu an. Abgelaufene
+  Kacheln räumt das Bundle selbst weg. Angefragt werden ohnehin nur die Kacheln, die der
+  Ausschnitt berührt.
 * Die **Namensnennung „© OpenStreetMap-Mitwirkende“** ist nach der Lizenz der Daten (ODbL)
   Pflicht und wird fest ins Bild eingearbeitet — sie kann also nicht versehentlich
   verlorengehen.
@@ -216,8 +282,9 @@ ein Klick daneben landet also auf dem verlinkten Bild.
   Bild bleibt stehen. Meist hilft die Form „Straße Hausnummer, PLZ Ort“ — oder man trägt
   die Koordinaten ein.
 * Die Bilder heißen nach der Anschrift und tragen einen kurzen Fingerabdruck der
-  Einstellungen im Namen. Ändert sich der Maßstab, entsteht eine neue Datei; die alte
-  bleibt liegen und kann im Dateimanager gelöscht werden.
+  Einstellungen im Namen. Ändert sich etwa der Maßstab, der Kartenstil oder die Form der
+  Markierung, entsteht eine neue Datei; die alte bleibt liegen und kann im Dateimanager
+  gelöscht werden.
 * **Für die Schilder wird eine TrueType-Schrift benötigt.** Eine liegt bei; gesucht wird
   zuerst dort, danach an den üblichen Stellen des Systems (DejaVu, Liberation, FreeSans,
   Arial). Ohne FreeType-Unterstützung in GD bleiben die Punkte unbeschriftet — die

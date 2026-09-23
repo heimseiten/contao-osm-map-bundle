@@ -20,6 +20,7 @@ use Contao\CoreBundle\DependencyInjection\Attribute\AsContentElement;
 use Contao\CoreBundle\Image\Studio\Studio;
 use Contao\CoreBundle\Twig\FragmentTemplate;
 use Heimseiten\ContaoOsmMapBundle\Service\MapLinks;
+use Heimseiten\ContaoOsmMapBundle\Service\MapStyle;
 use Heimseiten\ContaoOsmMapBundle\Service\OverlayTextParser;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -94,6 +95,8 @@ class OsmMapController extends AbstractContentElementController
 
         $template->set('bild', $figure);
         $template->set('hinweis', null);
+        // Auf einer dunklen Karte wird auch der Balken dunkel (Klasse osm-map--dunkel).
+        $template->set('dunkel', \in_array((string) $model->osmKartenstil, MapStyle::DUNKLE, true));
         $template->set('verlinken', '' !== $bildLink);
         $template->set('link', $bildLink);
         $template->set('link_titel', $this->linkTitel($model, $bildZiel));

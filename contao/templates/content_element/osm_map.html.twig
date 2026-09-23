@@ -73,7 +73,7 @@
     {% if hinweis %}
         <p class="osm-map__hinweis">{{ hinweis }}</p>
     {% elseif bild %}
-        <div class="osm-map">
+        <div class="osm-map{% if dunkel|default(false) %} osm-map--dunkel{% endif %}">
             {% if verlinken %}
                 <a href="{{ link }}" class="osm-map__flaeche" title="{{ link_titel }}" target="_blank" rel="noopener">
                     {% with {figure: bild} %}{{ block('figure_component') }}{% endwith %}
