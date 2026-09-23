@@ -27,7 +27,7 @@ $GLOBALS['TL_LANG']['tl_content']['osmZoom'] = [
 ];
 $GLOBALS['TL_LANG']['tl_content']['osmKartenstil'] = [
     'Kartenstil',
-    'Farbgebung der Karte. Die Kartendaten bleiben dieselben von OpenStreetMap; umgefärbt wird beim Speichern auf dem eigenen Server, es kommt also kein weiterer Kartendienst hinzu. „Gedämpft“ und „Hell“ drängen sich neben einer farbigen Seitengestaltung am wenigsten auf. „Dunkel“ und „Nacht“ passen zu dunklen Seiten; dort wird auch der Balken mit der Beschriftung dunkel.',
+    'Farbgebung der Karte. Die Kartendaten bleiben dieselben von OpenStreetMap; umgefärbt wird beim Speichern auf dem eigenen Server, es kommt also kein weiterer Kartendienst hinzu. „Freundlich“ (Vorgabe) ist an die hellen, klaren Farben von Google Maps angelehnt, „Original“ zeigt die gewohnten Farben von OpenStreetMap. „Gedämpft“ und „Hell“ drängen sich neben einer farbigen Seitengestaltung am wenigsten auf. „Dunkel“ und „Nacht“ passen zu dunklen Seiten; dort wird auch der Balken mit der Beschriftung dunkel. Karten, die vor dieser Einstellung entstanden sind, behalten die Originalfarben.',
 ];
 $GLOBALS['TL_LANG']['tl_content']['osmMarkerForm'] = [
     'Form der Markierung',
@@ -75,7 +75,8 @@ $GLOBALS['TL_LANG']['tl_content']['osmOverlayText'] = [
 ];
 
 $GLOBALS['TL_LANG']['tl_content']['osmKartenstile'] = [
-    'standard' => 'Standard – die gewohnten Farben von OpenStreetMap',
+    'freundlich' => 'Freundlich – helle, klare Farben, angelehnt an Google Maps (Vorgabe)',
+    'standard' => 'Original – die gewohnten Farben von OpenStreetMap',
     'gedaempft' => 'Gedämpft – dieselben Farben, deutlich zurückgenommen',
     'hell' => 'Hell – zartes Grau, die Markierung sticht hervor',
     'graustufen' => 'Graustufen',

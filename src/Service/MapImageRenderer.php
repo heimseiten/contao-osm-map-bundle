@@ -84,7 +84,7 @@ class MapImageRenderer
         int $dichte = 2,
         int $qualitaet = 82,
         string $markerForm = MarkerRenderer::BISHER,
-        string $kartenstil = MapStyle::STANDARD,
+        string $kartenstil = MapStyle::BISHER,
     ): string {
         if (!\function_exists('imagecreatetruecolor')) {
             throw new OsmMapException('Auf diesem Server fehlt die Bildbibliothek GD; ohne sie lässt sich kein Kartenbild erzeugen.');

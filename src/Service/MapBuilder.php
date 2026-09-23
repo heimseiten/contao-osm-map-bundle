@@ -77,7 +77,7 @@ class MapBuilder
         $form = (string) ($einstellungen['markerForm'] ?? '');
         $form = \in_array($form, MarkerRenderer::AUSWAHL, true) ? $form : MarkerRenderer::BISHER;
         $stil = (string) ($einstellungen['kartenstil'] ?? '');
-        $stil = \in_array($stil, MapStyle::AUSWAHL, true) ? $stil : MapStyle::STANDARD;
+        $stil = \in_array($stil, MapStyle::AUSWAHL, true) ? $stil : MapStyle::BISHER;
 
         // Zweite Fassung für schmale Bildschirme. Ein breites, flaches Kartenbild wird auf
         // dem Telefon entweder winzig oder es zeigt nach dem Zuschneiden die Umgebung statt
@@ -111,7 +111,7 @@ class MapBuilder
             $teile[] = 'form:'.$form;
         }
 
-        if (MapStyle::STANDARD !== $stil) {
+        if (MapStyle::BISHER !== $stil) {
             $teile[] = 'stil:'.$stil;
         }
 

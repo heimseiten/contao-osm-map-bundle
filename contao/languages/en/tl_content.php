@@ -27,7 +27,7 @@ $GLOBALS['TL_LANG']['tl_content']['osmZoom'] = [
 ];
 $GLOBALS['TL_LANG']['tl_content']['osmKartenstil'] = [
     'Map style',
-    'Colour scheme of the map. The map data stays the same from OpenStreetMap; the tiles are recoloured on the site’s own server when saving, so no further map service is involved. “Muted” and “Light” are the least obtrusive next to a colourful page design. “Dark” and “Night” suit dark pages; there the caption bar turns dark as well.',
+    'Colour scheme of the map. The map data stays the same from OpenStreetMap; the tiles are recoloured on the site’s own server when saving, so no further map service is involved. “Friendly” (default) follows the light, clear colours of Google Maps, “Original” shows the familiar OpenStreetMap colours. “Muted” and “Light” are the least obtrusive next to a colourful page design. “Dark” and “Night” suit dark pages; there the caption bar turns dark as well. Maps created before this setting existed keep the original colours.',
 ];
 $GLOBALS['TL_LANG']['tl_content']['osmMarkerForm'] = [
     'Marker shape',
@@ -75,7 +75,8 @@ $GLOBALS['TL_LANG']['tl_content']['osmOverlayText'] = [
 ];
 
 $GLOBALS['TL_LANG']['tl_content']['osmKartenstile'] = [
-    'standard' => 'Standard – the familiar OpenStreetMap colours',
+    'freundlich' => 'Friendly – light, clear colours, inspired by Google Maps (default)',
+    'standard' => 'Original – the familiar OpenStreetMap colours',
     'gedaempft' => 'Muted – the same colours, clearly toned down',
     'hell' => 'Light – soft grey, the marker stands out',
     'graustufen' => 'Greyscale',

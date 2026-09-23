@@ -28,6 +28,7 @@ namespace Heimseiten\ContaoOsmMapBundle\Service;
 class MapStyle
 {
     public const STANDARD = 'standard';
+    public const FREUNDLICH = 'freundlich';
     public const GEDAEMPFT = 'gedaempft';
     public const HELL = 'hell';
     public const GRAUSTUFEN = 'graustufen';
@@ -35,8 +36,9 @@ class MapStyle
     public const DUNKEL = 'dunkel';
     public const NACHT = 'nacht';
 
-    /** Reihenfolge im Auswahlfeld: vom Original über zurückhaltend und hell zu dunkel. */
+    /** Reihenfolge im Auswahlfeld: die Vorgabe, das Original, dann zurückhaltend, hell, dunkel. */
     public const AUSWAHL = [
+        self::FREUNDLICH,
         self::STANDARD,
         self::GEDAEMPFT,
         self::HELL,
@@ -46,8 +48,70 @@ class MapStyle
         self::NACHT,
     ];
 
+    /** Neue Karten bekommen die hellen, klaren Farben, angelehnt an Google Maps. */
+    public const VORGABE = self::FREUNDLICH;
+
+    /**
+     * Bis Version 1.1 gab es nur die Farben von OpenStreetMap selbst. Karten aus dieser Zeit
+     * behalten sie, damit eine vorhandene Karte nach einem Update nicht ungefragt anders aussieht.
+     */
+    public const BISHER = self::STANDARD;
+
     /** Stile mit dunklem Grund; der Balken mit der Beschriftung wird dort ebenfalls dunkel. */
     public const DUNKLE = [self::DUNKEL, self::NACHT];
+
+    /**
+     * „Freundlich": die typischen Farben der Kacheln (gemessen, links) und was aus ihnen wird
+     * (rechts) — helles, neutrales Land, weiße Straßen mit hellgrauem Rand, gelbe Hauptstraßen,
+     * klares Blau, frisches Grün, zurückhaltende Gewerbeflächen. Zwischentöne an den Kanten
+     * folgen ihren nächsten Nachbarn in dieser Liste.
+     */
+    private const FREUNDLICH_FARBEN = [
+        // Land, Wohngebiete, Gebäude und ihre Umrisse
+        '#f2efe9' => '#f6f6f3',
+        '#e0dfdf' => '#efefed',
+        '#d9d0c9' => '#e6e6ea',
+        '#c2b5aa' => '#d6d6dc',
+        // Wasser
+        '#aad3df' => '#9ccff5',
+        '#abd3df' => '#9ccff5',
+        // Grünflächen
+        '#add19e' => '#b5dfb2',
+        '#c8facc' => '#c3eac0',
+        '#cdebb0' => '#cdeac4',
+        '#c9e1bf' => '#cce7c5',
+        '#c8d7ab' => '#cde2c3',
+        '#aacbaf' => '#c2dec5',
+        '#dffce2' => '#d6f1d7',
+        '#88e0be' => '#ade2c0',
+        '#88b78e' => '#a7d0ab',
+        '#eef0d5' => '#f0f2e5',
+        '#b6b592' => '#d3d6c3',
+        '#ffffe5' => '#f8f8ec',
+        // Gewerbe, Handel, Industrie, Fußgängerzonen: kaum vom Land abgesetzt
+        '#ffd6d1' => '#f3f0ef',
+        '#f2dad9' => '#f2f0ef',
+        '#ebdbe8' => '#eeecef',
+        '#dddde8' => '#ececf1',
+        '#c7c7b4' => '#e3e4dc',
+        // Straßen: Autobahn und Bundesstraße gelb-orange, Hauptstraßen hellgelb
+        '#ffffff' => '#ffffff',
+        '#e892a2' => '#f6c46b',
+        '#f9b29c' => '#fbd07c',
+        '#fcd6a4' => '#fde6a3',
+        '#f7fabf' => '#fffae2',
+        '#ababab' => '#d2d3d6',
+        '#b4b3b3' => '#d8d9dc',
+        '#f98476' => '#efc6bf',
+        // Bahnlinien, Schrift und Symbole: leiser
+        '#707070' => '#a6a8ac',
+        '#676767' => '#a2a4a8',
+        '#7c7b7b' => '#abadb0',
+        '#000000' => '#3f4347',
+        '#734a08' => '#9c8667',
+        '#0092da' => '#6cb0da',
+        '#ac39ac' => '#b69ab6',
+    ];
 
     /**
      * Färbt eine Kachel in den gewünschten Stil um.
@@ -106,6 +170,7 @@ class MapStyle
     public function farbe(string $stil, int $r, int $g, int $b): array
     {
         return match ($stil) {
+            self::FREUNDLICH => $this->freundlich($r, $g, $b),
             self::GEDAEMPFT => $this->gedaempft($r, $g, $b),
             self::HELL => $this->hell($r, $g, $b),
             self::GRAUSTUFEN => $this->grau($this->luma($r, $g, $b)),
@@ -114,6 +179,82 @@ class MapStyle
             self::NACHT => $this->nacht($r, $g, $b),
             default => [$r, $g, $b],
         };
+    }
+
+    /**
+     * Freundlich: Jede Farbe wandert so weit, wie ihre nächsten Nachbarn aus der Liste
+     * FREUNDLICH_FARBEN wandern — je näher ein Nachbar, desto mehr zählt er. So folgen auch
+     * die Zwischentöne an den Kanten (Straße zu Land, Haus zu Hof) sauber mit, und Farben, die
+     * in der Liste nicht vorkommen, bleiben weitgehend, wie sie sind. Dunkles (Schrift,
+     * Symbole) wird danach etwas heller und blasser, damit die Karte ruhiger wirkt.
+     *
+     * @return array{0: int, 1: int, 2: int}
+     */
+    private function freundlich(int $r, int $g, int $b): array
+    {
+        static $paare = null;
+
+        if (null === $paare) {
+            $paare = [];
+
+            foreach (self::FREUNDLICH_FARBEN as $von => $nach) {
+                $v = sscanf($von, '#%2x%2x%2x');
+                $n = sscanf($nach, '#%2x%2x%2x');
+                $paare[] = [$v, [$n[0] - $v[0], $n[1] - $v[1], $n[2] - $v[2]]];
+            }
+        }
+
+        // Gewichte nach Abstand im Farbraum (Glocke mit 10 Stufen Breite): Eine Farbe aus der
+        // Liste trifft ihr Ziel so gut wie genau, ein Zwischenton mischt die Wege seiner
+        // Nachbarn. Wie weit er ihnen folgt, hängt davon ab, wie nah er ihnen insgesamt ist —
+        // fremde Farben, weit weg von allem in der Liste, bleiben, wie sie sind.
+        $summe = 0.0;
+        $verschiebung = [0.0, 0.0, 0.0];
+
+        foreach ($paare as [$von, $weg]) {
+            $abstand = (($r - $von[0]) ** 2 + ($g - $von[1]) ** 2 + ($b - $von[2]) ** 2) / 100;
+
+            if ($abstand > 9) {
+                continue;
+            }
+
+            $gewicht = exp(-$abstand);
+            $summe += $gewicht;
+            $verschiebung[0] += $gewicht * $weg[0];
+            $verschiebung[1] += $gewicht * $weg[1];
+            $verschiebung[2] += $gewicht * $weg[2];
+        }
+
+        $folgen = $summe > 0 ? min(1.0, $summe / 0.2) / $summe : 0.0;
+        $neu = $this->runden([
+            $r + $verschiebung[0] * $folgen,
+            $g + $verschiebung[1] * $folgen,
+            $b + $verschiebung[2] * $folgen,
+        ]);
+
+        [$h, $s, $l] = $this->hsl(...$neu);
+
+        if ($l < 0.5) {
+            return $this->rgb($h, $s * 0.6, 0.25 + $l * 0.75);
+        }
+
+        // Fast graue, helle Töne (Land, Gebäude und ihre Zwischentöne) neutral statt warm:
+        // Die Kacheln haben dort einen beigen Stich, der nach dem Aufhellen rosa wirkt.
+        if ($s < 0.2) {
+            return $this->rgb($h, $s * 0.25, $l);
+        }
+
+        return $neu;
+    }
+
+    /**
+     * @param array{0: float, 1: float, 2: float} $farbe
+     *
+     * @return array{0: int, 1: int, 2: int}
+     */
+    private function runden(array $farbe): array
+    {
+        return array_map(static fn (float $wert): int => (int) round(max(0.0, min(255.0, $wert))), $farbe);
     }
 
     /**
@@ -222,8 +363,10 @@ class MapStyle
     }
 
     /**
-     * Die Wasserflächen von OpenStreetMap: ein helles, kräftiges Blau (#abd3df). Schrift in
-     * Blau (Namen von Flüssen) ist dunkler und fällt nicht darunter.
+     * Die Wasserflächen von OpenStreetMap: ein helles, kräftiges Blau (#aad3df, in manchen
+     * Kacheln #abd3df — jede Kachel hat ihre eigene Palette). Deshalb die Prüfung über
+     * Farbton, Sättigung und Helligkeit statt über einen festen Wert. Schrift in Blau (Namen
+     * von Flüssen) ist dunkler und fällt nicht darunter.
      */
     private function istWasser(float $h, float $s, float $l): bool
     {

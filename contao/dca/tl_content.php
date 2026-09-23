@@ -87,20 +87,22 @@ $felder = [
     ],
     /*
      * Farbgebung der Karte. Die Kacheln bleiben dieselben von OpenStreetMap, umgefärbt wird
-     * beim Speichern auf dem eigenen Server.
+     * beim Speichern auf dem eigenen Server. Neue Karten bekommen „Freundlich"; Karten aus der
+     * Zeit vor diesem Feld behalten die Originalfarben — dafür sorgt beim Update die
+     * BisherigesAussehenMigration.
      */
     'osmKartenstil' => [
         'inputType' => 'select',
         'exclude' => true,
-        'default' => MapStyle::STANDARD,
+        'default' => MapStyle::VORGABE,
         'options' => MapStyle::AUSWAHL,
         'reference' => &$GLOBALS['TL_LANG']['tl_content']['osmKartenstile'],
         'eval' => ['tl_class' => 'w50', 'includeBlankOption' => false],
-        'sql' => "varchar(16) NOT NULL default '".MapStyle::STANDARD."'",
+        'sql' => "varchar(16) NOT NULL default '".MapStyle::VORGABE."'",
     ],
     /*
      * Neue Karten bekommen den Pin wie bei Google Maps. Karten aus der Zeit vor diesem Feld
-     * behalten den Punkt — dafür sorgt beim Update die MarkerFormMigration.
+     * behalten den Punkt — dafür sorgt beim Update die BisherigesAussehenMigration.
      */
     'osmMarkerForm' => [
         'inputType' => 'select',

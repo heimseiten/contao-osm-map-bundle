@@ -76,8 +76,9 @@ dafür nicht nötig. Nur beim Speichern im Backend holt der Server einmalig die 
   Spitze auf dem Ort steht. Außerdem gibt es den Pin mit Nummer oder Buchstabe, mit Haus,
   Stern oder Herz, den Punkt mit weißem Rand, den Punkt mit hellem Hof und das Fähnchen —
   siehe „Kartenstile und Formen der Markierung“.
-* **Kartenstil** wählbar: Standard, Gedämpft, Hell, Graustufen, Retro, Dunkel und Nacht.
-  Umgefärbt wird auf dem eigenen Server, es kommt kein weiterer Kartendienst hinzu.
+* **Kartenstil** wählbar. Vorgabe ist **„Freundlich“**, angelehnt an die hellen, klaren
+  Farben von Google Maps; außerdem Original, Gedämpft, Hell, Graustufen, Retro, Dunkel und
+  Nacht. Umgefärbt wird auf dem eigenen Server, es kommt kein weiterer Kartendienst hinzu.
 * **Farbe der Markierung** einstellbar, ebenso Breite und Höhe (Vorgabe 1920 × 600). Das
   sind die **Anzeigemaße**: Erzeugt wird das Bild mit der doppelten Auflösung, damit es auf
   hochauflösenden Bildschirmen scharf bleibt (siehe „Scharf auf Retina-Bildschirmen“).
@@ -110,11 +111,12 @@ möglich — bleiben die Schilder weg, und der Pin trägt statt Nummer oder Buch
 schlichte Loch; die Karte selbst entsteht dann trotzdem. Was vorhanden ist, zeigt eine
 `phpinfo()`-Ausgabe im Abschnitt *gd* unter „FreeType Support“.
 
-**Aktualisierung von Version 1.1:** Vorhandene Karten behalten ihren Punkt. Die Migration
-trägt ihn bei allen Karten-Elementen ein, bevor die neue Spalte ihre Vorgabe (Pin) erhält,
-und der Fingerabdruck dieser Karten bleibt derselbe — sie werden also auch nicht neu
-erzeugt. Der Pin gilt nur für Karten, die nach dem Update angelegt werden, oder wo er im
-Element ausgewählt wird.
+**Aktualisierung von Version 1.1:** Vorhandene Karten behalten ihr bisheriges Aussehen, also
+den Punkt und die Originalfarben. Die Migration trägt beides bei allen Karten-Elementen ein,
+bevor die neuen Spalten ihre Vorgaben (Pin, „Freundlich“) erhalten, und der Fingerabdruck
+dieser Karten bleibt derselbe — sie werden also auch nicht neu erzeugt. Pin und „Freundlich“
+gelten für Karten, die nach dem Update angelegt werden, oder wo sie im Element ausgewählt
+werden.
 
 Beim **Speichern** muss der Server ausgehende Verbindungen zu
 `nominatim.openstreetmap.org` und `tile.openstreetmap.org` aufbauen dürfen. Für Besucher
@@ -158,7 +160,7 @@ trotzdem geladen, der Besucher bekäme also beide Dateien.
 
 ## Kartenstile und Formen der Markierung
 
-![Die sieben Kartenstile und die Formen der Markierung](https://raw.githubusercontent.com/heimseiten/contao-osm-map-bundle/main/doc/kartenstile.jpg)
+![Die acht Kartenstile](https://raw.githubusercontent.com/heimseiten/contao-osm-map-bundle/main/doc/kartenstile.jpg)
 
 Die Karte kommt in jedem Stil aus denselben Kacheln von OpenStreetMap; umgefärbt werden sie
 beim Speichern auf dem eigenen Server. Es braucht also keinen weiteren Kartendienst, keinen
@@ -168,7 +170,8 @@ Palettenbilder mit höchstens 256 Farben, umgerechnet werden nur diese.
 
 | Stil | Wirkung |
 | --- | --- |
-| Standard | die gewohnten Farben von OpenStreetMap |
+| Freundlich (Vorgabe) | helle, klare Farben, angelehnt an Google Maps |
+| Original | die gewohnten Farben von OpenStreetMap |
 | Gedämpft | dieselben Farben, deutlich zurückgenommen |
 | Hell | zartes Grau, die Markierung sticht hervor |
 | Graustufen | schwarz-weiß |
@@ -176,8 +179,16 @@ Palettenbilder mit höchstens 256 Farben, umgerechnet werden nur diese.
 | Dunkel | für dunkel gestaltete Seiten |
 | Nacht | dunkles Blau |
 
+**„Freundlich“** ersetzt die typischen Farben der Kacheln gezielt: helles, neutrales Land,
+weiße Straßen mit hellgrauem Rand, gelbe Haupt- und orange Schnellstraßen, klares Blau,
+frisches Grün; Gewerbeflächen treten zurück, Schrift und Symbole werden leiser. Zwischentöne
+an den Kanten folgen den nächstgelegenen dieser Farben. Die Karte bleibt dabei die von
+OpenStreetMap — mit deren Symbolen und Beschriftungen, nur in anderen Farben.
+
 Bei „Dunkel“ und „Nacht“ wird auch der Balken mit der Beschriftung dunkel (Klasse
 `osm-map--dunkel`).
+
+![Die Formen der Markierung](https://raw.githubusercontent.com/heimseiten/contao-osm-map-bundle/main/doc/markierungen.jpg)
 
 **Die Formen der Markierung:**
 
