@@ -104,7 +104,10 @@ function einrichten(wurzel) {
 
         if (fliegen) {
             const ziel = { center: [ort.lon, ort.lat], zoom: Math.max(karte.getZoom(), Math.min(16, cfg.maxZoom)) };
-            bewegung ? karte.flyTo({ ...ziel, duration: 900 }) : karte.jumpTo(ziel);
+            // Ruhiger Flug: MapLibre zoomt auf dem Weg hinaus und wieder hinein; mit 3 s bleibt
+            // das gut zu verfolgen. Feste Dauer statt speed/maxDuration: Wird maxDuration
+            // überschritten, springt MapLibre ohne Flug ans Ziel (gemessen bei weiten Strecken).
+            bewegung ? karte.flyTo({ ...ziel, duration: 3000, curve: 1.42 }) : karte.jumpTo(ziel);
         }
 
         const inhalt = document.createElement('div');
@@ -234,12 +237,19 @@ function einrichten(wurzel) {
 
             await laden();
 
+            // Liegt die Karte außerhalb des Bildschirms, erst hinrollen, dann fliegen — sonst
+            // ist der Flug schon halb vorbei, wenn die Karte ins Bild kommt.
+            let warten = 0;
+
             if (!sichtbar(wurzel)) {
                 wurzel.scrollIntoView({ behavior: bewegung ? 'smooth' : 'auto', block: 'center' });
+                warten = bewegung ? 600 : 0;
             }
 
-            const los = () => oeffnen(i, true);
-            karte.loaded() ? los() : karte.once('load', los);
+            // Nicht karte.loaded(): Das ist auch nach dem ersten Zeichnen falsch, solange Kacheln
+            // nachladen (etwa direkt nach einem Flug) — und „load“ kommt kein zweites Mal.
+            const los = () => setTimeout(() => oeffnen(i, true), warten);
+            wurzel.classList.contains('osm-map--bereit') ? los() : karte.once('load', los);
         });
     });
 
