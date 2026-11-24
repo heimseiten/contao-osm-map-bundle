@@ -9,6 +9,10 @@ dafür nicht nötig. Nur beim Speichern im Backend holt der Server einmalig die 
 
 ![Karte mit zwei Markierungen](https://raw.githubusercontent.com/heimseiten/contao-osm-map-bundle/main/doc/beispiel.jpg)
 
+**Neu in 1.3: bewegliche Karte.** Auf Wunsch liegt über dem Kartenbild eine Karte zum
+Verschieben und Zoomen, mit anklickbaren Markierungen — ebenfalls ohne fremde Server und
+damit ohne Zustimmungsbanner (siehe „Bewegliche Karte“).
+
 ## Was das Element kann
 
 * **Anschrift eintragen, fertig.** „Domkloster 4, 50667 Köln“ genügt. Nach dem
@@ -213,6 +217,79 @@ Ein Pin steht **über** seinem Ort. Beim automatischen Maßstab bleibt deshalb o
 die Köpfe, und bei mehreren Orten rückt der Ausschnitt um die halbe Pin-Höhe nach oben. Bei
 einem einzigen Ort bleibt die Spitze in der Bildmitte, wie bei Google Maps.
 
+## Bewegliche Karte
+
+Mit dem Haken **„Bewegliche Karte“** können Besucher die Karte verschieben und zoomen,
+Markierungen anklicken und von dort die Route öffnen. Wie beim Kartenbild kommt dabei
+**nichts von fremden Servern**:
+
+* **Kartendaten:** Beim Speichern schneidet der Server aus der täglichen Weltkarte von
+  [Protomaps](https://protomaps.com) (Vektorkacheln aus OpenStreetMap-Daten) das Gebiet um
+  die Markierungen aus und legt es als **eine PMTiles-Datei** neben die Kartenbilder,
+  meist 5 bis 20 MB. Bis Zoomstufe 11 reicht das Gebiet weit ins Umfeld, damit auch eine
+  breite, flache Karte alle Markierungen auf einmal zeigen kann; die Details bis Stufe 15
+  gibt es im engeren Gebiet (Markierungen plus Rand, mindestens rund 6 km). Darüber
+  vergrößert die Karte die Daten der Stufe 15.
+  Gelesen wird die Weltkarte (rund 140 GB) nur stückweise über HTTP-Range-Abrufe — **in PHP,
+  ohne zusätzliches Programm**, also auch auf üblichem Webhosting. Das erste Speichern
+  dauert dadurch etwa eine halbe Minute; danach nur noch, wenn sich das Gebiet ändert.
+* **Darstellung:** [MapLibre GL](https://maplibre.org) samt Stil, Schriften (Noto Sans)
+  und Symbolen liefert das Bundle mit (`public/interaktiv/`). Besucher laden von der
+  Kartendatei nur die Teile, die sie gerade sehen — auf der Beispielseite für Übersicht
+  und eine Nahansicht 0,4 MB (Desktop) bis 1 MB (Telefon, doppelte Auflösung).
+* **Ablauf auf der Seite:** Zuerst steht das gewohnte Kartenbild da — schnell, ohne
+  JavaScript und beim Drucken. Kommt die Karte in die Nähe des sichtbaren Bereichs, lädt
+  das Skript die Bibliothek und blendet die bewegliche Karte deckungsgleich darüber. Im
+  Datensparmodus des Browsers und bei einem Fehler bleibt es beim Bild.
+* **Bedienung:** Zoomen mit Strg + Mausrad bzw. zwei Fingern (die Seite lässt sich also
+  weiter normal scrollen), Knöpfe für + und −. Ein Klick auf eine Markierung öffnet eine
+  Sprechblase mit der Beschriftung und dem Link aus **„Link in der Sprechblase“**
+  (Vorgabe: „Anfahrt mit Google Maps“, neuer Tab). Bei Google-Zielen wird die Anschrift
+  übergeben, damit Google den Namen des Ortes zeigt. Die Beschriftungen der Markierungen
+  sind die Namen in den Sprechblasen — es lohnt sich, sie auszufüllen.
+* **Kartenstile:** Die acht Stile gibt es auch für die bewegliche Karte, in denselben
+  Farbstimmungen wie die Bilder.
+
+### Orte auf der Seite mit der Karte verknüpfen
+
+Jedes Element der Seite kann einen Ort der Karte zeigen, etwa ein Kasten je Standort unter
+der Karte. Dazu bekommt das Karten-Element eine **CSS-ID** (z. B. `standorte`) und das
+Element die **CSS-Klasse** `osm-ort-standorte-2` — die Zahl ist die Zeile der Markierung,
+gezählt ab 1 wie bei `{osm-2}`. Beides geht im Backend unter „Experten-Einstellungen“, ohne
+HTML. Im eigenen HTML geht auch `data-osm-ort="standorte:2"`.
+
+* Klick auf das Element: Die Karte fliegt zum Ort und öffnet die Sprechblase; liegt die
+  Karte außerhalb des Bildschirms, wird sie hergerollt. Klicks auf Links im Element (etwa
+  „Anfahrt“) bleiben Links.
+* Klick auf eine Markierung: Das zugehörige Element bekommt die Klasse `osm-ort--aktiv`
+  (zum Hervorheben im Theme), alle anderen verlieren sie.
+* Für eigene Skripte meldet die Karte jede Auswahl mit dem Ereignis `osm-map:ort`
+  (`detail`: `karte`, `nummer`, `name`).
+
+### Kartendaten aktualisieren
+
+OpenStreetMap ändert sich laufend, die Kartendatei nicht von selbst. Einmal im Jahr genügt:
+
+```bash
+vendor/bin/contao-console heimseiten:osm-map:rebuild --kartendaten
+```
+
+Die alte Datei bleibt liegen und kann im Dateimanager gelöscht werden.
+
+### Content-Security-Policy
+
+Alles kommt von der eigenen Domain. Die Karte rechnet in einem Web Worker
+(`maplibre-gl-worker.mjs`, ebenfalls von der eigenen Domain); `script-src 'self'` genügt,
+`blob:` wird nicht gebraucht.
+
+### Bibliotheken neu bauen (nur Entwicklung)
+
+```bash
+cd entwicklung && npm ci && node bauen.mjs
+```
+
+Versionen in `entwicklung/package.json`, Ergebnis in `public/interaktiv/VERSIONEN.txt`.
+
 ## Einstellungen
 
 Beides ist optional — ohne Angabe gelten die Vorgaben.
@@ -237,6 +314,7 @@ Nötig etwa nach einem Umzug auf einen anderen Server, wenn die Bilddateien fehl
 vendor/bin/contao-console heimseiten:osm-map:rebuild          # nur fehlende
 vendor/bin/contao-console heimseiten:osm-map:rebuild --force  # alle
 vendor/bin/contao-console heimseiten:osm-map:rebuild --id=42  # ein bestimmtes Element
+vendor/bin/contao-console heimseiten:osm-map:rebuild --kartendaten  # Daten beweglicher Karten neu holen
 ```
 
 Im Alltag ist der Befehl nicht nötig: Beim Speichern eines Elements entsteht das Bild
@@ -260,6 +338,11 @@ werden:
 .osm-map--dunkel    /* derselbe Rahmen bei den Kartenstilen „Dunkel“ und „Nacht“ */
 .osm-map__flaeche   /* der Link um das Bild */
 .osm-map__balken    /* die Beschriftung über dem unteren Bildrand */
+.osm-map--interaktiv, .osm-map--bereit  /* bewegliche Karte vorhanden / gezeichnet */
+.osm-map__karte     /* die bewegliche Karte über dem Bild */
+.osm-map__pin       /* eine Markierung (Knopf) */
+.osm-map__blase     /* Inhalt der Sprechblase, darin .osm-map__link */
+.osm-ort--aktiv     /* verknüpftes Element der zuletzt gewählten Markierung */
 ```
 
 Der Balken lässt Klicks durch (`pointer-events: none`), nur seine Links fangen sie ab —
@@ -282,6 +365,12 @@ ein Klick daneben landet also auf dem verlinkten Bild.
 * Die **Namensnennung „© OpenStreetMap-Mitwirkende“** ist nach der Lizenz der Daten (ODbL)
   Pflicht und wird fest ins Bild eingearbeitet — sie kann also nicht versehentlich
   verlorengehen.
+* **Bewegliche Karte:** Beim Speichern holt der Server den Ausschnitt der Kartendaten von
+  `build.protomaps.com` (Range-Abrufe, einmalig je Gebiet). Besucher laden Bibliothek,
+  Stil, Schriften, Symbole und Kartendaten ausschließlich von der eigenen Website. Die
+  Namensnennung „© OpenStreetMap · Protomaps“ steht unten rechts in der Karte. Lizenzen:
+  Kartendaten ODbL (OpenStreetMap), MapLibre GL und pmtiles BSD-3-Clause, Stil
+  (@protomaps/basemaps) BSD-3-Clause, Schrift Noto Sans SIL OFL 1.1.
 * Wird ein Google-Ziel gewählt (beim Klick auf das Bild oder über `{google}` bzw.
   `{route-google}` im Balken), entsteht ein **Link** zu Google Maps. Ein Link allein lädt
   nichts nach; erst der Klick führt den Besucher dorthin. Wer das vermeiden will, wählt

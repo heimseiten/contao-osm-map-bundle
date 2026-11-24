@@ -80,6 +80,32 @@ class OsmMapCallbacks
             'osmZoomEffektiv' => $ergebnis['zoom'],
         ], ['id' => $dc->id]);
 
+        // Bewegliche Karte: Kartendaten für das Gebiet um die Markierungen
+        if ($datensatz->osmInteraktiv) {
+            try {
+                $daten = $this->mapBuilder->kartendatenBauen(
+                    $ergebnis['positionen'],
+                    (string) $datensatz->osmKartendatenHash ?: null,
+                    $datensatz->osmKartendaten ?: null,
+                );
+
+                $this->connection->update('tl_content', [
+                    'osmKartendaten' => $daten['uuid'],
+                    'osmKartendatenHash' => $daten['fingerabdruck'],
+                ], ['id' => $dc->id]);
+
+                if ($daten['neu']) {
+                    Message::addConfirmation(\sprintf(
+                        'Die Kartendaten für die bewegliche Karte wurden geholt (%d Kacheln, %s MB).',
+                        $daten['kacheln'],
+                        number_format($daten['bytes'] / 1_000_000, 1, ',', ''),
+                    ));
+                }
+            } catch (OsmMapException $e) {
+                Message::addError('Bewegliche Karte: '.$e->getMessage());
+            }
+        }
+
         if ($ergebnis['neu']) {
             Message::addConfirmation(\sprintf(
                 'Die Karte wurde erzeugt (Maßstab %d). Gefundene %s: %s',

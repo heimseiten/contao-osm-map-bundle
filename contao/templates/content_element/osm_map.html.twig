@@ -67,13 +67,20 @@
     {% add "osm_map_css" to stylesheets %}
         <link rel="stylesheet" href="{{ asset("osm-map.css", "heimseiten_contao_osm_map") }}">
     {% endadd %}
+    {# Bewegliche Karte: Das Skript lädt MapLibre erst, wenn eine Karte ins Bild kommt. #}
+    {% if interaktiv|default(null) %}
+        {% add "osm_map_interaktiv_js" to body %}
+            <script type="module" src="{{ asset("osm-map-interaktiv.js", "heimseiten_contao_osm_map") }}"></script>
+        {% endadd %}
+    {% endif %}
 {% endblock %}
 
 {% block content %}
     {% if hinweis %}
         <p class="osm-map__hinweis">{{ hinweis }}</p>
     {% elseif bild %}
-        <div class="osm-map{% if dunkel|default(false) %} osm-map--dunkel{% endif %}">
+        <div class="osm-map{% if dunkel|default(false) %} osm-map--dunkel{% endif %}{% if interaktiv|default(null) %} osm-map--interaktiv{% endif %}"
+             {%- if interaktiv|default(null) %} data-osm-interaktiv="{{ interaktiv|json_encode }}"{% endif %}>
             {% if verlinken %}
                 <a href="{{ link }}" class="osm-map__flaeche" title="{{ link_titel }}" target="_blank" rel="noopener">
                     {% with {figure: bild} %}{{ block('figure_component') }}{% endwith %}

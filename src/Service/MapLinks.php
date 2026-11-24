@@ -80,6 +80,26 @@ class MapLinks
      * Führt das Ziel zu Google? Wichtig für den Hinweis im Backend: Ein Link lädt zwar
      * nichts nach, der Betreiber sollte aber wissen, wohin er seine Besucher schickt.
      */
+    /**
+     * Wie url(), bei Google aber mit der Anschrift als Ziel statt der Koordinaten: Google
+     * zeigt dann den Namen des Ortes an („Friedhof Obertal, Kraftenbuckelweg 1“) statt
+     * „48.52, 8.36“. Ist die Anschrift selbst eine Koordinate, bleibt es bei url().
+     */
+    public function urlMitAnschrift(string $ziel, string $anschrift, float $lat, float $lon, int $zoom = 15): string
+    {
+        $anschrift = trim($anschrift);
+
+        if ('' === $anschrift || preg_match('/^\s*-?\d+(\.\d+)?\s*,\s*-?\d+(\.\d+)?\s*$/', $anschrift)) {
+            return $this->url($ziel, $lat, $lon, $zoom);
+        }
+
+        return match ($ziel) {
+            self::KARTE_GOOGLE => 'https://www.google.com/maps/search/?api=1&query='.rawurlencode($anschrift),
+            self::ROUTE_GOOGLE => 'https://www.google.com/maps/dir/?api=1&destination='.rawurlencode($anschrift),
+            default => $this->url($ziel, $lat, $lon, $zoom),
+        };
+    }
+
     public function fuehrtZuGoogle(string $ziel): bool
     {
         return \in_array($ziel, [self::KARTE_GOOGLE, self::ROUTE_GOOGLE], true);

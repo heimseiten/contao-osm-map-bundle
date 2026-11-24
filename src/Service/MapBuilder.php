@@ -29,12 +29,22 @@ use Contao\StringUtil;
  */
 class MapBuilder
 {
+    /** Höchste Zoomstufe der Kartendaten (Protomaps liefert bis 15; die Karte vergrößert darüber hinaus). */
+    public const MAX_ZOOM = 15;
+
+    /**
+     * Ab dieser Stufe gibt es Kartendaten nur im engeren Gebiet um die Markierungen; darunter
+     * auch im weiteren Umfeld (siehe umfeld()). Die groben Stufen kosten wenig Platz.
+     */
+    public const DETAIL_AB = 12;
+
     public function __construct(
         private readonly Geocoder $geocoder,
         private readonly MapImageRenderer $renderer,
         private readonly MapExtent $extent,
         private readonly MarkerRenderer $marker,
         private readonly ContaoFramework $framework,
+        private readonly PmtilesAusschnitt $ausschnitt,
         private readonly string $projectDir,
         private readonly string $zielordner,
     ) {
@@ -222,6 +232,112 @@ class MapBuilder
     }
 
     /**
+     * Kartendaten der beweglichen Karte: Ausschnitt der OpenStreetMap-Vektorkacheln von
+     * Protomaps für das Gebiet um die Markierungen, als PMTiles-Datei im Dateimanager.
+     *
+     * Wie beim Kartenbild entscheidet ein Fingerabdruck: Ist das Gebiet dasselbe und liegt
+     * die Datei noch, wird nichts geholt. Mit $erneuern wird auch ein unverändertes Gebiet
+     * neu geholt — für aktuelle Kartendaten (Befehl heimseiten:osm-map:rebuild --kartendaten).
+     *
+     * @param list<array{lat: float, lon: float}> $positionen
+     *
+     * @return array{uuid: string, fingerabdruck: string, neu: bool, kacheln: int, bytes: int}
+     *
+     * @throws OsmMapException
+     */
+    public function kartendatenBauen(array $positionen, string|null $fingerabdruckAlt, string|null $uuidAlt, bool $erneuern = false): array
+    {
+        $this->framework->initialize();
+
+        if (!$positionen) {
+            throw new OsmMapException('Für die bewegliche Karte fehlen die Positionen. Bitte das Element einmal speichern.');
+        }
+
+        $gebiet = $this->gebiet($positionen);
+        $umfeld = $this->umfeld($gebiet);
+        $fingerabdruck = md5('pmtiles|'.self::MAX_ZOOM.'|'.self::DETAIL_AB.'|'.implode(',', array_map(static fn (float $w) => number_format($w, 4, '.', ''), [...$gebiet, ...$umfeld])));
+
+        if (!$erneuern && $fingerabdruck === $fingerabdruckAlt && $uuidAlt && $this->dateiLiegt($uuidAlt)) {
+            return ['uuid' => $uuidAlt, 'fingerabdruck' => $fingerabdruck, 'neu' => false, 'kacheln' => 0, 'bytes' => 0];
+        }
+
+        // Bis zu einer Minute beim ersten Speichern (gemessen: 12 MB in 28 s).
+        @set_time_limit(300);
+
+        $ordner = trim($this->zielordner, '/');
+        $this->ordnerVorbereiten($ordner);
+        $pfad = $ordner.'/kartendaten-'.substr($fingerabdruck, 0, 8).'.pmtiles';
+
+        $ergebnis = $this->ausschnitt->ausschneiden($this->ausschnitt->neuesteQuelle(), [
+            ['gebiet' => $umfeld, 'von' => 0, 'bis' => self::DETAIL_AB - 1],
+            ['gebiet' => $gebiet, 'von' => self::DETAIL_AB, 'bis' => self::MAX_ZOOM],
+        ], $this->projectDir.'/'.$pfad);
+
+        Dbafs::addResource($pfad);
+        $model = FilesModel::findByPath($pfad);
+
+        if (null === $model) {
+            throw new OsmMapException(\sprintf('Die Kartendaten "%s" ließen sich nicht in den Dateimanager übernehmen.', $pfad));
+        }
+
+        return ['uuid' => $model->uuid, 'fingerabdruck' => $fingerabdruck, 'neu' => true, 'kacheln' => $ergebnis['kacheln'], 'bytes' => $ergebnis['bytes']];
+    }
+
+    /**
+     * Gebiet der Kartendaten: die Markierungen mit Rand. Der Rand wächst mit der Ausdehnung
+     * (die Hälfte davon je Seite), mindestens rund 6 km — so lässt sich auch bei einem
+     * einzelnen Ort die Umgebung erkunden, ohne dass die Datei groß wird.
+     *
+     * @param list<array{lat: float, lon: float}> $positionen
+     *
+     * @return array{0: float, 1: float, 2: float, 3: float} Westen, Süden, Osten, Norden
+     */
+    public function gebiet(array $positionen): array
+    {
+        $lats = array_map(static fn (array $p) => (float) $p['lat'], $positionen);
+        $lons = array_map(static fn (array $p) => (float) $p['lon'], $positionen);
+        $randLat = max((max($lats) - min($lats)) / 2, 0.055);
+        $randLon = max((max($lons) - min($lons)) / 2, 0.055 / cos(deg2rad((max($lats) + min($lats)) / 2)));
+
+        return [
+            round(max(-180, min($lons) - $randLon), 4),
+            round(max(-85, min($lats) - $randLat), 4),
+            round(min(180, max($lons) + $randLon), 4),
+            round(min(85, max($lats) + $randLat), 4),
+        ];
+    }
+
+    /**
+     * Weiteres Umfeld für die groben Zoomstufen. Eine breite, flache Karte zeigt beim Blick
+     * auf alle Markierungen seitlich viel mehr als das Gebiet selbst; ohne Daten dort müsste
+     * sie hineinzoomen und schnitte Markierungen ab. Deshalb: mindestens dreimal so breit wie
+     * hoch (breite Karten) und mindestens so hoch wie breit (quadratische auf dem Telefon),
+     * gemessen in Kilometern, mittig um das Gebiet.
+     *
+     * @param array{0: float, 1: float, 2: float, 3: float} $gebiet
+     *
+     * @return array{0: float, 1: float, 2: float, 3: float}
+     */
+    public function umfeld(array $gebiet): array
+    {
+        [$w, $s, $o, $n] = $gebiet;
+        $kos = cos(deg2rad(($s + $n) / 2));
+        $breite = ($o - $w) * $kos;   // in „Breitengrad-Einheiten“, vergleichbar mit der Höhe
+        $hoehe = $n - $s;
+        $breiteNeu = max($breite, 3 * $hoehe);
+        $hoeheNeu = max($hoehe, $breite);
+        $mitteLon = ($w + $o) / 2;
+        $mitteLat = ($s + $n) / 2;
+
+        return [
+            round(max(-180, $mitteLon - $breiteNeu / $kos / 2), 4),
+            round(max(-85, $mitteLat - $hoeheNeu / 2), 4),
+            round(min(180, $mitteLon + $breiteNeu / $kos / 2), 4),
+            round(min(85, $mitteLat + $hoeheNeu / 2), 4),
+        ];
+    }
+
+    /**
      * Mitte des Ausschnitts, wenn die Markierungen über ihren Ort hinausragen (Pins).
      *
      * Bei mehreren Orten rückt der Ausschnitt um die halbe Kopfhöhe nach oben: Dann haben
@@ -323,6 +439,27 @@ class MapBuilder
     private function dateiAblegen(string $daten, string $anschrift, string $fingerabdruck, string $zusatz = ''): string
     {
         $ordner = trim($this->zielordner, '/');
+        $this->ordnerVorbereiten($ordner);
+
+        // Sprechender Dateiname aus der Anschrift, dazu der Fingerabdruck: So bleibt die
+        // Datei erkennbar, und eine geänderte Karte überschreibt die alte nicht.
+        $name = 'karte-'.$this->dateinameAusAnschrift($anschrift).'-'.substr($fingerabdruck, 0, 8).$zusatz.'.jpg';
+        $pfad = $ordner.'/'.$name;
+
+        $datei = new File($pfad);
+        $datei->write($daten);
+        $datei->close();
+
+        Dbafs::addResource($pfad);
+
+        return $pfad;
+    }
+
+    /**
+     * Legt den Zielordner samt Freigabe (.public) und Verweis unter public/ an.
+     */
+    private function ordnerVorbereiten(string $ordner): void
+    {
         $verzeichnis = $this->projectDir.'/'.$ordner;
 
         if (!is_dir($verzeichnis) && !@mkdir($verzeichnis, 0777, true) && !is_dir($verzeichnis)) {
@@ -342,19 +479,6 @@ class MapBuilder
         // Getrennt prüfen: Die Markierung kann liegen, der Verweis aber fehlen — etwa
         // wenn public/ neu aufgebaut wurde.
         $this->verweisAnlegen($ordner);
-
-        // Sprechender Dateiname aus der Anschrift, dazu der Fingerabdruck: So bleibt die
-        // Datei erkennbar, und eine geänderte Karte überschreibt die alte nicht.
-        $name = 'karte-'.$this->dateinameAusAnschrift($anschrift).'-'.substr($fingerabdruck, 0, 8).$zusatz.'.jpg';
-        $pfad = $ordner.'/'.$name;
-
-        $datei = new File($pfad);
-        $datei->write($daten);
-        $datei->close();
-
-        Dbafs::addResource($pfad);
-
-        return $pfad;
     }
 
     /**

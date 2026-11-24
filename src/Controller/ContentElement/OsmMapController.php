@@ -19,7 +19,12 @@ use Contao\CoreBundle\Controller\ContentElement\AbstractContentElementController
 use Contao\CoreBundle\DependencyInjection\Attribute\AsContentElement;
 use Contao\CoreBundle\Image\Studio\Studio;
 use Contao\CoreBundle\Twig\FragmentTemplate;
+use Contao\FilesModel;
+use Contao\StringUtil;
+use Heimseiten\ContaoOsmMapBundle\Service\MapBuilder;
 use Heimseiten\ContaoOsmMapBundle\Service\MapLinks;
+use Symfony\Component\Asset\Packages;
+use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Heimseiten\ContaoOsmMapBundle\Service\MapStyle;
 use Heimseiten\ContaoOsmMapBundle\Service\OverlayTextParser;
 use Symfony\Component\HttpFoundation\Request;
@@ -37,6 +42,10 @@ class OsmMapController extends AbstractContentElementController
         private readonly Studio $studio,
         private readonly MapLinks $links,
         private readonly OverlayTextParser $overlayTextParser,
+        private readonly MapBuilder $mapBuilder,
+        private readonly Packages $assets,
+        #[Autowire('%kernel.project_dir%')]
+        private readonly string $projectDir,
     ) {
     }
 
@@ -102,6 +111,8 @@ class OsmMapController extends AbstractContentElementController
         $template->set('link_titel', $this->linkTitel($model, $bildZiel));
         $template->set('anschrift', (string) ($haupt['anzeigename'] ?? ''));
 
+        $template->set('interaktiv', $this->interaktiv($model, $positionen, $zoom));
+
         // Der Balken über dem unteren Bildrand: Text mit einzeln verlinkten Wörtern.
         $template->set('balken', $this->overlayTextParser->zerlegen(
             (string) $model->osmOverlayText,
@@ -110,6 +121,66 @@ class OsmMapController extends AbstractContentElementController
         ));
 
         return $template->getResponse();
+    }
+
+    /**
+     * Angaben für die bewegliche Karte (osm-map-interaktiv.js), oder null ohne Haken bzw.
+     * solange die Kartendaten fehlen — dann bleibt es beim Kartenbild.
+     *
+     * @param list<array{lat: float, lon: float, label?: string, anzeigename?: string}> $positionen
+     */
+    private function interaktiv(ContentModel $model, array $positionen, int $zoom): array|null
+    {
+        if (!$model->osmInteraktiv || !$model->osmKartendaten || !$positionen) {
+            return null;
+        }
+
+        $datei = FilesModel::findByUuid($model->osmKartendaten);
+
+        if (null === $datei || !is_file($this->projectDir.'/'.$datei->path)) {
+            return null;
+        }
+
+        $texte = $GLOBALS['TL_LANG']['MSC']['osmInteraktiv'] ?? [];
+        $linkTyp = (string) ($model->osmOrtLink ?: MapLinks::ROUTE_GOOGLE);
+        $zeilen = StringUtil::deserialize($model->osmPoints, true);
+        $orte = [];
+
+        foreach ($positionen as $i => $p) {
+            $name = trim((string) ($p['label'] ?? ''));
+
+            if ('' === $name) {
+                $name = trim(explode(',', (string) ($p['anzeigename'] ?? ''))[0]);
+            }
+
+            $anschrift = trim((string) ($zeilen[$i]['anschrift'] ?? ''));
+            $ziel = '' !== trim((string) ($p['label'] ?? '')) && '' !== $anschrift ? $p['label'].', '.$anschrift : $anschrift;
+
+            $orte[] = [
+                'lat' => (float) $p['lat'],
+                'lon' => (float) $p['lon'],
+                'name' => $name,
+                'link' => MapLinks::KEINER === $linkTyp ? '' : $this->links->urlMitAnschrift($linkTyp, $ziel, (float) $p['lat'], (float) $p['lon'], max($zoom, 16)),
+            ];
+        }
+
+        $stil = \in_array((string) $model->osmKartenstil, MapStyle::AUSWAHL, true) ? (string) $model->osmKartenstil : MapStyle::VORGABE;
+
+        return [
+            'daten' => '/'.$datei->path,
+            'basis' => strtok($this->assets->getUrl('interaktiv', 'heimseiten_contao_osm_map'), '?'),
+            'stil' => $stil,
+            'orte' => $orte,
+            'farbe' => (string) ($model->osmMarkerColor ?: '#bf7500'),
+            'zoom' => $zoom,
+            'maxZoom' => 19,
+            'datenZoom' => MapBuilder::MAX_ZOOM,
+            'gebiet' => $gebiet = $this->mapBuilder->gebiet($positionen),
+            'umfeld' => $this->mapBuilder->umfeld($gebiet),
+            'detailAb' => MapBuilder::DETAIL_AB,
+            'linkText' => $texte['links'][$linkTyp] ?? '',
+            'texte' => array_diff_key($texte, ['links' => true]),
+        ];
     }
 
     /**

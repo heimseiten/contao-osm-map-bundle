@@ -22,6 +22,11 @@ services:
             $userAgent: '%heimseiten_osm_map.user_agent%'
             $projectDir: '%kernel.project_dir%'
 
+    # Ausschnitt der Kartendaten für die bewegliche Karte (Range-Abrufe bei Protomaps)
+    Heimseiten\ContaoOsmMapBundle\Service\PmtilesAusschnitt:
+        arguments:
+            $userAgent: '%heimseiten_osm_map.user_agent%'
+
     Heimseiten\ContaoOsmMapBundle\Service\MapBuilder:
         arguments:
             $projectDir: '%kernel.project_dir%'

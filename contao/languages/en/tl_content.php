@@ -126,3 +126,19 @@ $GLOBALS['TL_LANG']['tl_content']['osmZoomStufen'] = [
     18 => '18 – buildings',
     19 => '19 – buildings, very close',
 ];
+
+$GLOBALS['TL_LANG']['tl_content']['osmInteraktiv'] = [
+    'Interactive map',
+    'Visitors can pan and zoom the map, click the markers and open directions from there. The map image is still shown first and remains without JavaScript and when printing. <b>Nothing is loaded from third-party servers</b>: when saving, the server fetches an extract of the OpenStreetMap data (Protomaps) for the area around the markers once and stores it as a file next to the map images, usually 5 to 20 MB. Visitors only load the parts they are looking at. The first save may therefore take up to a minute.',
+];
+$GLOBALS['TL_LANG']['tl_content']['osmOrtLink'] = [
+    'Link in the popup',
+    'Clicking a marker opens a popup with its label and this link (new tab).',
+];
+$GLOBALS['TL_LANG']['tl_content']['osmOrtLinkTypen'] = [
+    'route_google' => 'Directions with Google Maps (default)',
+    'route_osm' => 'Directions with OpenStreetMap',
+    'karte_google' => 'Open in Google Maps',
+    'karte_osm' => 'Open in OpenStreetMap',
+    'keiner' => 'no link',
+];

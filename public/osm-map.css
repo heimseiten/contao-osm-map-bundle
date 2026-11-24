@@ -83,3 +83,98 @@
         font-size: 0.75rem;
     }
 }
+
+/* ------------------------------------------------------------------ Bewegliche Karte (seit 1.3)
+   Die Karte liegt deckungsgleich über dem Kartenbild und blendet sich ein, sobald sie
+   gezeichnet ist. Bis dahin (und ohne JavaScript) bleibt das Bild zu sehen. */
+.osm-map__karte {
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    opacity: 0;
+    line-height: 1.4;
+    transition: opacity 0.4s ease;
+}
+
+.osm-map--bereit .osm-map__karte {
+    opacity: 1;
+}
+
+.osm-map__leinwand {
+    width: 100%;
+    height: 100%;
+}
+
+/* Die Karte hat eigene Links in den Sprechblasen; der Balken würde die Quellenangabe verdecken. */
+.osm-map--bereit .osm-map__balken {
+    display: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .osm-map__karte { transition: none; }
+}
+
+@media print {
+    .osm-map__karte { display: none; }
+}
+
+.osm-map__pin {
+    display: block;
+    width: 32px;
+    height: 42px;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    background: none;
+    cursor: pointer;
+    filter: drop-shadow(0 2px 2px rgba(0, 0, 0, 0.3));
+    transition: transform 0.2s ease;
+    transform-origin: 50% 100%;
+}
+
+.osm-map__pin svg {
+    display: block;
+}
+
+.osm-map__pin:hover,
+.osm-map__pin:focus-visible {
+    transform: scale(1.12);
+}
+
+.osm-map__pin:focus-visible {
+    outline: 2px solid #1a73e8;
+    outline-offset: 2px;
+}
+
+.osm-map__blase {
+    display: grid;
+    gap: 0.5em;
+    padding-right: 1.2em;
+    font-size: 0.95rem;
+    line-height: 1.35;
+}
+
+.osm-map__link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4em;
+}
+
+.osm-map__extern {
+    flex: none;
+}
+
+.osm-map__unsichtbar {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+}
+
+/* Verknüpfte Orte auf der Seite (Klasse osm-ort-<id>-<n> oder data-osm-ort); das Skript setzt
+   osm-ort--verknuepft, sobald ein Element einer Karte zugeordnet ist. */
+.osm-ort--verknuepft {
+    cursor: pointer;
+}

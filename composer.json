@@ -1,6 +1,6 @@
 {
     "name": "heimseiten/contao-osm-map-bundle",
-    "description": "Inhaltselement für Karten aus OpenStreetMap, ohne Verbindung zu fremden Servern beim Seitenaufruf: Anschrift eintragen, das Kartenbild entsteht beim Speichern und liegt danach im Dateimanager.",
+    "description": "Inhaltselement für Karten aus OpenStreetMap, ohne Verbindung zu fremden Servern beim Seitenaufruf: Anschrift eintragen, Kartenbild und auf Wunsch eine bewegliche Karte (MapLibre, Kartendaten als PMTiles im Dateimanager) entstehen beim Speichern.",
     "keywords": [
         "karte",
         "map",
@@ -9,6 +9,10 @@
         "anfahrt",
         "standorte",
         "datenschutz",
+        "maplibre",
+        "pmtiles",
+        "interaktive karte",
+        "ohne cookie-banner",
         "dsgvo",
         "google maps",
         "dlh googlemaps",

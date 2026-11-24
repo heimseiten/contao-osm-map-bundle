@@ -26,7 +26,7 @@ use Heimseiten\ContaoOsmMapBundle\Service\MarkerRenderer;
  */
 $GLOBALS['TL_DCA']['tl_content']['palettes']['osm_map'] =
     '{type_legend},type,headline;'
-    .'{osm_legend},osmPoints,osmZoom,osmWidth,osmHeight,osmMobil;'
+    .'{osm_legend},osmPoints,osmZoom,osmWidth,osmHeight,osmMobil,osmInteraktiv;'
     .'{osm_look_legend},osmKartenstil,osmMarkerForm,osmMarkerColor;'
     .'{osm_link_legend},osmLinkTyp,osmOverlayText;'
     .'{image_legend},size,overwriteMeta;'
@@ -40,6 +40,9 @@ $GLOBALS['TL_DCA']['tl_content']['subpalettes']['overwriteMeta'] = 'alt,imageTit
 // Felder aus, die als Selektor angemeldet sind — der Haken allein genügt nicht.
 $GLOBALS['TL_DCA']['tl_content']['palettes']['__selector__'][] = 'osmMobil';
 $GLOBALS['TL_DCA']['tl_content']['subpalettes']['osmMobil'] = 'osmWidthMobil,osmHeightMobil,osmMobilBis,osmSizeMobil';
+// Bewegliche Karte: Kartendaten entstehen beim Speichern als PMTiles-Datei im Dateimanager.
+$GLOBALS['TL_DCA']['tl_content']['palettes']['__selector__'][] = 'osmInteraktiv';
+$GLOBALS['TL_DCA']['tl_content']['subpalettes']['osmInteraktiv'] = 'osmOrtLink';
 
 $felder = [
     /*
@@ -182,6 +185,29 @@ $felder = [
         'eval' => ['rgxp' => 'natural', 'includeBlankOption' => true, 'nospace' => true, 'helpwizard' => true, 'tl_class' => 'w50'],
         'sql' => "varchar(64) NOT NULL default ''",
     ],
+    /*
+     * Bewegliche Karte (seit 1.3). Das Kartenbild bleibt und steht zuerst da — schnell, ohne
+     * JavaScript und beim Drucken. Kommt die Karte ins Bild, übernimmt darüber eine Karte zum
+     * Verschieben und Zoomen. Ihre Daten liegen als eine Datei im Dateimanager (Ausschnitt
+     * aus den OpenStreetMap-Daten von Protomaps, beim Speichern geholt); Bibliothek, Schriften
+     * und Symbole liefert das Bundle mit. Besucher laden also nichts von fremden Servern.
+     */
+    'osmInteraktiv' => [
+        'inputType' => 'checkbox',
+        'exclude' => true,
+        'eval' => ['submitOnChange' => true, 'tl_class' => 'w50 m12 clr'],
+        'sql' => "char(1) NOT NULL default ''",
+    ],
+    // Link in der Sprechblase einer Markierung (bewegliche Karte)
+    'osmOrtLink' => [
+        'inputType' => 'select',
+        'exclude' => true,
+        'default' => MapLinks::ROUTE_GOOGLE,
+        'options' => MapLinks::AUSWAHL,
+        'reference' => &$GLOBALS['TL_LANG']['tl_content']['osmOrtLinkTypen'],
+        'eval' => ['tl_class' => 'w50', 'includeBlankOption' => false],
+        'sql' => "varchar(16) NOT NULL default '".MapLinks::ROUTE_GOOGLE."'",
+    ],
     'osmLinkTyp' => [
         'inputType' => 'select',
         'exclude' => true,
@@ -223,6 +249,13 @@ $felder = [
     // Frontend braucht ihn für die Verweise.
     'osmZoomEffektiv' => [
         'sql' => 'smallint(5) unsigned NOT NULL default 15',
+    ],
+    // Kartendaten der beweglichen Karte (PMTiles) und der Fingerabdruck des Gebiets
+    'osmKartendaten' => [
+        'sql' => 'binary(16) NULL',
+    ],
+    'osmKartendatenHash' => [
+        'sql' => "varchar(32) NOT NULL default ''",
     ],
 ];
 

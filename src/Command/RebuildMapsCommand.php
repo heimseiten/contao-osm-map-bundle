@@ -33,7 +33,7 @@ use Symfony\Component\Console\Style\SymfonyStyle;
  */
 #[AsCommand(
     name: 'heimseiten:osm-map:rebuild',
-    description: 'Erzeugt die Bilder aller Karten-Elemente neu.',
+    description: 'Erzeugt die Bilder (und die Kartendaten beweglicher Karten) aller Karten-Elemente neu.',
 )]
 class RebuildMapsCommand extends Command
 {
@@ -49,6 +49,7 @@ class RebuildMapsCommand extends Command
         $this
             ->addOption('force', 'f', InputOption::VALUE_NONE, 'Auch Karten neu erzeugen, deren Bild bereits vorhanden und unverändert ist.')
             ->addOption('id', null, InputOption::VALUE_REQUIRED, 'Nur dieses eine Inhaltselement.')
+            ->addOption('kartendaten', null, InputOption::VALUE_NONE, 'Kartendaten beweglicher Karten neu holen (aktueller Stand von OpenStreetMap), auch wenn das Gebiet gleich geblieben ist.')
         ;
     }
 
@@ -59,7 +60,8 @@ class RebuildMapsCommand extends Command
         $sql = "SELECT id, osmPoints, osmZoom, osmZoomEffektiv, osmWidth, osmHeight,
                        osmMobil, osmWidthMobil, osmHeightMobil,
                        osmMarkerColor, osmMarkerForm, osmKartenstil,
-                       osmHash, osmImage, osmImageMobil, osmPositionen
+                       osmHash, osmImage, osmImageMobil, osmPositionen,
+                       osmInteraktiv, osmKartendaten, osmKartendatenHash
                   FROM tl_content WHERE type = 'osm_map'";
         $parameter = [];
 
@@ -116,6 +118,28 @@ class RebuildMapsCommand extends Command
                 'osmHash' => $ergebnis['fingerabdruck'],
                 'osmZoomEffektiv' => $ergebnis['zoom'],
             ], ['id' => $element['id']]);
+
+            if ($element['osmInteraktiv']) {
+                try {
+                    $daten = $this->mapBuilder->kartendatenBauen(
+                        $ergebnis['positionen'],
+                        (string) $element['osmKartendatenHash'] ?: null,
+                        $element['osmKartendaten'] ?: null,
+                        (bool) $input->getOption('kartendaten'),
+                    );
+                    $this->connection->update('tl_content', [
+                        'osmKartendaten' => $daten['uuid'],
+                        'osmKartendatenHash' => $daten['fingerabdruck'],
+                    ], ['id' => $element['id']]);
+
+                    if ($daten['neu']) {
+                        $io->writeln(\sprintf('  #%-5s <info>Kartendaten</info> %d Kacheln, %.1f MB', $element['id'], $daten['kacheln'], $daten['bytes'] / 1_000_000));
+                    }
+                } catch (OsmMapException $e) {
+                    $io->writeln(\sprintf('  #%-5s <error>Bewegliche Karte: %s</error>', $element['id'], $e->getMessage()));
+                    ++$fehler;
+                }
+            }
 
             if ($ergebnis['neu']) {
                 $io->writeln(\sprintf(

@@ -1,0 +1,14 @@
+{
+  "name": "contao-osm-map-bundle-interaktiv",
+  "private": true,
+  "type": "module",
+  "description": "Baut die Dateien der beweglichen Karte (public/interaktiv/). Nur für die Entwicklung, nicht für Websites.",
+  "scripts": {
+    "bauen": "node bauen.mjs"
+  },
+  "dependencies": {
+    "@protomaps/basemaps": "5.7.2",
+    "maplibre-gl": "6.17.0",
+    "pmtiles": "4.5.0"
+  }
+}

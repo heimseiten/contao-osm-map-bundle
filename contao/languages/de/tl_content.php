@@ -126,3 +126,19 @@ $GLOBALS['TL_LANG']['tl_content']['osmZoomStufen'] = [
     18 => '18 – Gebäude',
     19 => '19 – Gebäude, ganz nah',
 ];
+
+$GLOBALS['TL_LANG']['tl_content']['osmInteraktiv'] = [
+    'Bewegliche Karte',
+    'Besucher können die Karte verschieben und zoomen, die Markierungen anklicken und von dort die Route öffnen. Das Kartenbild steht weiterhin zuerst da und bleibt ohne JavaScript und beim Drucken. <b>Es wird nichts von fremden Servern geladen</b>: Beim Speichern holt der Server einmalig einen Ausschnitt der OpenStreetMap-Daten (Protomaps) für das Gebiet um die Markierungen und legt ihn als Datei im Ordner der Kartenbilder ab, meist 5 bis 20 MB. Besucher laden davon nur die Teile, die sie gerade sehen. Das Speichern dauert dadurch beim ersten Mal bis zu einer Minute.',
+];
+$GLOBALS['TL_LANG']['tl_content']['osmOrtLink'] = [
+    'Link in der Sprechblase',
+    'Ein Klick auf eine Markierung öffnet eine Sprechblase mit ihrer Beschriftung und diesem Link (neuer Tab).',
+];
+$GLOBALS['TL_LANG']['tl_content']['osmOrtLinkTypen'] = [
+    'route_google' => 'Anfahrt mit Google Maps (Vorgabe)',
+    'route_osm' => 'Anfahrt mit OpenStreetMap',
+    'karte_google' => 'In Google Maps öffnen',
+    'karte_osm' => 'In OpenStreetMap öffnen',
+    'keiner' => 'kein Link',
+];
